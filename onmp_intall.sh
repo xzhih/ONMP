@@ -3,30 +3,33 @@
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
 
+install_check()
+{
+    notinstall=""
+    for data in $pkglist ; do
+        if [ `opkg list-installed | grep $data |wc -l` -ne 0 ];then
+            echo "$data 已安装"
+        else
+            notinstall="$notinstall $data"
+            echo "$data 正在安装..."
+            opkg install $data
+        fi
+    done
+}
 # 安装软件包
 install_onmp_ipk()
 {
     opkg update
     opkg upgrade
-    for data in $pkglist ; do
-        if [ `opkg list-installed | grep $data |wc -l` -ne 0 ];then
-            installed="$installed $data"
-        else
-            notinstall="$notinstall $data"
-        fi
-    done
-
-    echo "已安装："
-    for data in $installed; do
-        echo "$data"
-    done
-
+    install_check
     if [[ ${#notinstall} -gt 0 ]]; then
-        echo "现在安装："
-        for data in $notinstall; do
-            opkg install "$data"
-        done
-        echo "可能会因为网络问题无法安装上软件包，请挂全局VPN再次运行命令"
+        install_check
+    fi
+    if [[ ${#notinstall} -gt 0 ]]; then
+        install_check
+    fi
+    if [[ ${#notinstall} -gt 0 ]]; then
+        echo "可能会因为网络问题某些软件包无法安装，请挂全局VPN再次运行命令"
     else
         echo "----------------------------------------"
         echo "|********** ONMP软件包已完整安装 *********|"
@@ -113,7 +116,9 @@ EOF
     reset_sql
 
     # PHP7设置 
+    if [ `ps | grep php-cgi |wc -l` -ne 1 ];then
     killall -9 php-cgi
+    fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
 
     # 生成ONMP命令
@@ -127,17 +132,24 @@ EOF
 # 重置数据库
 reset_sql()
 {
+    killall mysqld
     killall -9 mysqld
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
     sed -e "s/.*user.*/user        = admin/g" -i /opt/etc/mysql/my.cnf
     sed -e "s/^pid-file.*/socket      = \/opt\/tmp\/mysql\.sock/g" -i /opt/etc/mysql/my.cnf
-    /opt/bin/mysql_install_db --force
+    chmod 644 /opt/etc/mysql/my.cnf
+    mkdir -p /opt/mysql/
+    /opt/bin/mysql_install_db
     /opt/bin/mysqld &
+    if [ `ps | grep mysqld |wc -l` -ne 1 ];then
+        /opt/bin/mysqld &
+    fi
     sleep 2
     echo -e "\n正在初始化数据库密码..."
     sleep 2
     mysqladmin -u root password 123456
+    killall mysqld
     killall -9 mysqld
     echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
 }
@@ -277,34 +289,34 @@ install_wordpress()
         read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
         case $ans in
             y ) 
-        rm -rf /opt/wwwroot/$webdir 
-        echo "已删除";;
-        n ) echo "未删除";;
-        * ) echo "没有这个选项" ;;
-        esac
+rm -rf /opt/wwwroot/$webdir 
+echo "已删除";;
+n ) echo "未删除";;
+* ) echo "没有这个选项" ;;
+esac
+fi
+if [ ! -d "/opt/wwwroot/$webdir" ] ; then
+    rm -rf /opt/etc/nginx/vhost/$webdir.conf
+    if [[ ! -f /opt/wwwroot/wordpress.zip ]]; then
+        wget -O /opt/wwwroot/wordpress.zip https://cn.wordpress.org/wordpress-4.8-zh_CN.zip
     fi
-    if [ ! -d "/opt/wwwroot/$webdir" ] ; then
-        rm -rf /opt/etc/nginx/vhost/$webdir.conf
-        if [[ ! -f /opt/wwwroot/wordpress.zip ]]; then
-            wget -O /opt/wwwroot/wordpress.zip https://cn.wordpress.org/wordpress-4.8-zh_CN.zip
-        fi
-        echo "正在解压..."
-        unzip /opt/wwwroot/wordpress.zip -d /opt/wwwroot/ >/dev/null 2>&1
-        echo "解压完成..."
-    fi
-    if [ ! -d "/opt/wwwroot/$webdir" ] ; then
-        echo "安装未成功"
-    else
-        echo "正在配置WordPress..."
-        echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
-        echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
-        echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
-        chown -R www:www /opt/wwwroot
-        add_vhost $port $webdir
-        onmp restart >/dev/null 2>&1
-        echo "WordPress安装完成"
-        echo "浏览器输入网关地址:$port (如：192.168.1.1:$port)，即可访问"
-    fi
+    echo "正在解压..."
+    unzip /opt/wwwroot/wordpress.zip -d /opt/wwwroot/ >/dev/null 2>&1
+    echo "解压完成..."
+fi
+if [ ! -d "/opt/wwwroot/$webdir" ] ; then
+    echo "安装未成功"
+else
+    echo "正在配置WordPress..."
+    echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
+    echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
+    echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
+    chown -R www:www /opt/wwwroot
+    add_vhost $port $webdir
+    onmp restart >/dev/null 2>&1
+    echo "WordPress安装完成"
+    echo "浏览器输入网关地址:$port (如：192.168.1.1:$port)，即可访问"
+fi
 }
 
 # 添加网站
