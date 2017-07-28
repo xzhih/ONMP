@@ -201,7 +201,6 @@ case $1 in
     echo "|****  请用以下命令启动 停止 重启ONMP  ****|"
     echo "|*****  onmp start|stop|restart   *****|"
     echo "----------------------------------------"
-    echo -e "onmp start|stop|restart\n"
     ;;
 esac
 EOF
