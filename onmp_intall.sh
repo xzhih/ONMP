@@ -226,11 +226,11 @@ cat << AAA
 (2) WordPress（使用最广泛的CMS）
 
 AAA
-read -p "输入你的选择[0-5]: " input
+read -p "输入你的选择[1-2]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
-*) echo "你输入的数字不是 0 到 5 之间的!"
+*) echo "你输入的数字不是 1 到 2 之间的!"
 break;;
 esac
 }
