@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-07-29 06:27:42
+# @Last Modified time: 2017-07-29 06:36:26
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -121,7 +121,7 @@ EOF
 
     # PHP7设置 
     if [ `ps | grep php-cgi |wc -l` -ne 1 ];then
-    killall -9 php-cgi
+        killall -9 php-cgi
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
 
@@ -142,11 +142,10 @@ reset_sql()
     rm -rf /opt/var/mysql
     sed -e "s/.*user.*/user        = admin/g" -i /opt/etc/mysql/my.cnf
     sed -e "s/^pid-file.*/socket      = \/opt\/tmp\/mysql\.sock/g" -i /opt/etc/mysql/my.cnf
-    chmod 644 /opt/etc/mysql/my.cnf
     mkdir -p /opt/mysql/
     /opt/bin/mysql_install_db
     /opt/bin/mysqld &
-    if [ `ps | grep mysqld |wc -l` -ne 1 ];then
+    if [ `ps | grep mysqld |wc -l` -ne 2 ];then
         /opt/bin/mysqld &
     fi
     sleep 2
@@ -306,6 +305,7 @@ if [ ! -d "/opt/wwwroot/$webdir" ] ; then
     fi
     echo "正在解压..."
     unzip /opt/wwwroot/wordpress.zip -d /opt/wwwroot/ >/dev/null 2>&1
+    mv /opt/wwwroot/wordpress /opt/wwwroot/$webdir
     echo "解压完成..."
 fi
 if [ ! -d "/opt/wwwroot/$webdir" ] ; then
