@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-07-29 06:36:26
+# @Last Modified time: 2017-07-29 11:26:15
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -185,6 +185,8 @@ cat > "/opt/bin/onmp" <<-\EOF
 case $1 in
     start )
     echo "onmp正在启动"
+    killall -9 nginx mysqld php-cgi
+    sleep 2
     /opt/bin/mysqld &
     sleep 2
     /opt/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 2 -f /opt/bin/php-cgi
