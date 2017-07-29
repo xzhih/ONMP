@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-07-29 21:12:26
+# @Last Modified time: 2017-07-29 23:18:27
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -57,58 +57,84 @@ init_onmp()
 
 # NGINX设置
 killall -9 nginx
+rm -rf /opt/etc/nginx/vhost 
+rm -rf /opt/etc/nginx/conf
+mkdir -p /opt/etc/nginx/vhost
+mkdir -p /opt/etc/nginx/conf
+
 cat > "/opt/etc/nginx/nginx.conf" <<-\EOF
 user  www www;
 pid /opt/var/run/nginx.pid;
 worker_processes auto;
-worker_rlimit_nofile 100000;
-
+worker_rlimit_nofile 51200;
 events {
-    worker_connections 2048;
-    multi_accept on;
-    use epoll;
+    worker_connections  256;
 }
-
 http {
-    server_tokens off;
-    sendfile on;
-    tcp_nopush on;
-    tcp_nodelay on;
-
-    access_log off;
-    error_log /opt/var/log/nginx/error.log crit;
-
-    keepalive_timeout 10;
-    client_header_timeout 10;
-    client_body_timeout 10;
-    reset_timedout_connection on;
-    send_timeout 10;
-
-    limit_conn_zone $binary_remote_addr zone=addr:5m;
-    limit_conn addr 100;
-
-    include mime.types;
+    include       mime.types;
     default_type  application/octet-stream;
-    charset UTF-8;
-
+    server_names_hash_bucket_size 128;
+    client_header_buffer_size 32k;
+    large_client_header_buffers 4 32k;
+    client_max_body_size 50m;
+    sendfile   on;
+    tcp_nopush on;
+    keepalive_timeout 60;
+    tcp_nodelay on;
+    fastcgi_connect_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
+    fastcgi_buffer_size 64k;
+    fastcgi_buffers 4 64k;
+    fastcgi_busy_buffers_size 128k;
+    fastcgi_temp_file_write_size 256k;
     gzip on;
-    gzip_disable "msie6";
-    gzip_proxied any;
-    gzip_min_length 1000;
-    gzip_comp_level 6;
-    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
-
-    open_file_cache max=100000 inactive=20s;
-    open_file_cache_valid 30s;
-    open_file_cache_min_uses 2;
-    open_file_cache_errors on;
-
+    gzip_min_length  1k;
+    gzip_buffers     4 16k;
+    gzip_http_version 1.1;
+    gzip_comp_level 2;
+    gzip_types     text/plain application/javascript application/x-javascript text/javascript text/css application/xml application/xml+rss;
+    gzip_vary on;
+    gzip_proxied   expired no-cache no-store private auth;
+    gzip_disable   "MSIE [1-6]\.";
+    server_tokens off;
     include /opt/etc/nginx/vhost/*.conf;
 }
 EOF
-rm -rf /opt/etc/nginx/vhost
-mkdir -p /opt/etc/nginx/vhost
-
+cat > "/opt/etc/nginx/php-fpm" <<-\EEE
+location ~ \.php$ {
+    try_files                   $uri = 404;
+    fastcgi_pass                127.0.0.1:9000;
+    fastcgi_index               index.php;
+    fastcgi_intercept_errors    on;
+    fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+    fastcgi_param  QUERY_STRING       $query_string;
+    fastcgi_param  REQUEST_METHOD     $request_method;
+    fastcgi_param  CONTENT_TYPE       $content_type;
+    fastcgi_param  CONTENT_LENGTH     $content_length;
+    fastcgi_param  SCRIPT_NAME        $fastcgi_script_name;
+    fastcgi_param  REQUEST_URI        $request_uri;
+    fastcgi_param  DOCUMENT_URI       $document_uri;
+    fastcgi_param  DOCUMENT_ROOT      $document_root;
+    fastcgi_param  SERVER_PROTOCOL    $server_protocol;
+    fastcgi_param  REQUEST_SCHEME     $scheme;
+    fastcgi_param  HTTPS              $https if_not_empty;
+    fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+    fastcgi_param  SERVER_SOFTWARE    nginx/$nginx_version;
+    fastcgi_param  REMOTE_ADDR        $remote_addr;
+    fastcgi_param  REMOTE_PORT        $remote_port;
+    fastcgi_param  SERVER_ADDR        $server_addr;
+    fastcgi_param  SERVER_PORT        $server_port;
+    fastcgi_param  SERVER_NAME        $server_name;
+    fastcgi_param  REDIRECT_STATUS    200;
+}
+EEE
+cat > "/opt/etc/nginx/conf/wordpress.conf" <<-\OOO
+location / {
+    try_files $uri $uri/ /index.php?$args;
+}
+rewrite /wp-admin$ $scheme://$host$uri/ permanent;
+OOO
     # 添加探针
     cp /opt/ONMP-master/default /opt/wwwroot/ -R
     chown -R www:www /opt/wwwroot/default
@@ -310,7 +336,6 @@ rm -rf /opt/wwwroot/$webdir
 echo "已删除";;
 n ) echo "未删除";;
 * ) echo "没有这个选项" ;;
-
 esac
 fi
 if [ ! -d "/opt/wwwroot/$webdir" ] ; then
@@ -332,6 +357,7 @@ else
     echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
     chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
+    sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/wordpress.conf\;/g" -i /opt/etc/nginx/vhost/wwwwwww.conf
     onmp restart >/dev/null 2>&1
     echo "WordPress安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
@@ -348,17 +374,10 @@ server {
     server_name  localhost;
     root  /opt/wwwroot/www/;
     index index.html index.htm index.php default.php tz.php;
-    error_page   500 502 503 504  /50x.html;
-
-    location = /50x.html {
-        root html;
-    }
-
-    location ~* ^.+\.php(\/.*)*$ {
-        fastcgi_pass   127.0.0.1:9000;
-        fastcgi_index  index.php;
-        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-        include        fastcgi_params;
+    location / {
+        autoindex   on;
+        include     /opt/etc/nginx/php-fpm;
+        #otherconf
     }
 }
 EOF
