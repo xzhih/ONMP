@@ -1,12 +1,12 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   triton2
-# @Last Modified time: 2017-07-29 11:26:15
+# @Last Modified by:   xuzhihao
+# @Last Modified time: 2017-07-29 13:52:35
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
-
+localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
 install_check()
 {
     notinstall=""
@@ -109,12 +109,10 @@ EOF
 rm -rf /opt/etc/nginx/vhost
 mkdir -p /opt/etc/nginx/vhost
 
-# 添加默认phpinfo
-add_vhost 81 default
-
-cat > "/opt/wwwroot/default/index.php" <<-\EOF
-<?php echo phpinfo(); ?>
-EOF
+    # 添加探针
+    cp /opt/ONMP-master/default /opt/wwwroot/ -R
+    chown -R www:www /opt/wwwroot/default
+    add_vhost 81 default
 
     # MySQL设置
     reset_sql
@@ -130,7 +128,7 @@ EOF
     echo "onmp正在启动"
     onmp restart >/dev/null 2>&1
     echo "onmp已运行"
-    echo "浏览器输入网关地址:81(如：192.168.1.1:81)，查看php信息"
+    echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
 
 # 重置数据库
@@ -182,17 +180,30 @@ set_onmp_sh()
 rm -rf /opt/bin/onmp
 cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
+
+localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+vhost_list()
+{
+    echo "网站列表："
+    for conf in /opt/etc/nginx/vhost/*;
+    do
+        path=$(cat $conf | awk 'NR==4' | awk '{print $2}' | sed 's/;//')
+        port=$(cat $conf | awk 'NR==2' | awk '{print $2}' | sed 's/;//')
+        echo "$path        $localhost:$port"
+    done
+}
 case $1 in
     start )
     echo "onmp正在启动"
-    killall -9 nginx mysqld php-cgi
+    killall -9 nginx mysqld php-cgi  >/dev/null 2>&1
     sleep 2
     /opt/bin/mysqld &
     sleep 2
-    /opt/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 2 -f /opt/bin/php-cgi
+    /opt/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 2 -f /opt/bin/php-cgi  >/dev/null 2>&1
     sleep 2
     nginx
     echo "onmp已启动"
+    vhost_list
     ;;
 
     stop )
@@ -203,14 +214,15 @@ case $1 in
 
     restart )
     echo "onmp正在重启"
-    killall -9 nginx mysqld php-cgi
+    killall -9 nginx mysqld php-cgi  >/dev/null 2>&1
     sleep 2
     /opt/bin/mysqld &
     sleep 2
-    /opt/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 2 -f /opt/bin/php-cgi
+    /opt/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 2 -f /opt/bin/php-cgi  >/dev/null 2>&1
     sleep 2
     nginx
     echo "onmp已经重启"
+    vhost_list
     ;;
 
     * )
@@ -275,7 +287,7 @@ install_phpmyadmin()
         chmod 644 /opt/wwwroot/phpmyadmin/config.inc.php
         onmp restart >/dev/null 2>&1
         echo "phpMyaAdmin安装完成"
-        echo "浏览器输入网关地址:82(如：192.168.1.1:82)，即可访问"
+        echo "浏览器地址栏输入：$localhost:82 即可访问"
     fi
 }
 
@@ -298,6 +310,7 @@ rm -rf /opt/wwwroot/$webdir
 echo "已删除";;
 n ) echo "未删除";;
 * ) echo "没有这个选项" ;;
+
 esac
 fi
 if [ ! -d "/opt/wwwroot/$webdir" ] ; then
@@ -321,7 +334,7 @@ else
     add_vhost $port $webdir
     onmp restart >/dev/null 2>&1
     echo "WordPress安装完成"
-    echo "浏览器输入网关地址:$port (如：192.168.1.1:$port)，即可访问"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
 fi
 }
 
@@ -334,7 +347,7 @@ server {
     listen 81;
     server_name  localhost;
     root  /opt/wwwroot/www/;
-    index index.php;
+    index index.html index.htm index.php default.php tz.php;
     error_page   500 502 503 504  /50x.html;
 
     location = /50x.html {
@@ -352,6 +365,19 @@ EOF
 sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
+
+# 网站列表
+vhost_list()
+{
+    echo "网站列表："
+    for conf in /opt/etc/nginx/vhost/*;
+    do
+        path=$(cat $conf | awk 'NR==4' | awk '{print $2}' | sed 's/;//')
+        port=$(cat $conf | awk 'NR==2' | awk '{print $2}' | sed 's/;//')
+        echo "$path        $localhost:$port"
+    done
+}
+
 # 脚本开始
 start()
 {
@@ -366,6 +392,7 @@ cat << EOF
 (4) 重置数据库
 (5) 全部重置（会删除网站目录，请注意备份）
 (6) 安装网站程序
+(7) 查看网站列表
 (0) 退出
 
 EOF
@@ -382,6 +409,8 @@ case $input in
 5) init_onmp
 ;;
 6) install_website
+;;
+7) vhost_list
 ;;
 0) break
 ;;
