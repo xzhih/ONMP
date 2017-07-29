@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-07-29 13:52:35
+# @Last Modified time: 2017-07-29 21:12:26
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -141,15 +141,15 @@ reset_sql()
     sed -e "s/.*user.*/user        = admin/g" -i /opt/etc/mysql/my.cnf
     sed -e "s/^pid-file.*/socket      = \/opt\/tmp\/mysql\.sock/g" -i /opt/etc/mysql/my.cnf
     mkdir -p /opt/mysql/
-    /opt/bin/mysql_install_db
+    /opt/bin/mysql_install_db 1>/dev/null
     /opt/bin/mysqld &
     if [ `ps | grep mysqld |wc -l` -ne 2 ];then
         /opt/bin/mysqld &
     fi
     sleep 2
-    echo -e "\n正在初始化数据库密码..."
-    sleep 2
-    mysqladmin -u root password 123456
+    echo -e "\n正在初始化数据库，请稍等"
+    sleep 10
+    mysqladmin -u root password 123456 1>/dev/null
     killall mysqld
     killall -9 mysqld
     echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
