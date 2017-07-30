@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-07-30 16:25:21
+# @Last Modified time: 2017-07-30 16:44:58
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -149,7 +149,7 @@ OOO
     # 生成ONMP命令
     set_onmp_sh
     echo "onmp正在启动"
-    /opt/etc/init.d/Sonmp restart >/dev/null 2>&1
+    /opt/etc/init.d/Sonmp start >/dev/null 2>&1
     echo "onmp已运行"
     echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
@@ -266,6 +266,7 @@ case $1 in
     ;;
 esac
 EOF
+# 开机启动
 cat > "/opt/etc/init.d/Sonmp" <<-\MMM
 #!/bin/sh
 #onmp web环境
@@ -399,7 +400,7 @@ else
     echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
     chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
-    sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/wordpress.conf\;/g" -i /opt/etc/nginx/vhost/wwwwwww.conf
+    sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/wordpress.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
     echo "WordPress安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
