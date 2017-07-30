@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-07-29 23:18:27
+# @Last Modified time: 2017-07-30 16:25:21
 
 #软件包列表
 pkglist="wget unzip php7 php7-mod-gd php7-mod-session php7-mod-pdo php7-mod-pdo-mysql php7-mod-mysqli php7-mod-mcrypt php7-mod-mbstring php7-fastcgi php7-cgi php7-mod-xml php7-mod-ctype php7-mod-curl php7-mod-exif php7-mod-ftp php7-mod-iconv php7-mod-json php7-mod-sockets php7-mod-sqlite3 php7-mod-tokenizer php7-mod-zip nginx spawn-fcgi zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd mariadb-server mariadb-client mariadb-client-extra"
@@ -51,9 +51,6 @@ init_onmp()
     rm -rf /opt/wwwroot
     mkdir -p /opt/wwwroot
     mkdir -p /opt/wwwroot/default
-    groupadd www
-    useradd -g www www
-    chown -R www:www /opt/wwwroot
 
 # NGINX设置
 killall -9 nginx
@@ -152,7 +149,7 @@ OOO
     # 生成ONMP命令
     set_onmp_sh
     echo "onmp正在启动"
-    onmp restart >/dev/null 2>&1
+    /opt/etc/init.d/Sonmp restart >/dev/null 2>&1
     echo "onmp已运行"
     echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
@@ -206,21 +203,23 @@ set_onmp_sh()
 rm -rf /opt/bin/onmp
 cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
-
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
 vhost_list()
 {
     echo "网站列表："
+    logger -t "【ONMP】" "网站列表："
     for conf in /opt/etc/nginx/vhost/*;
     do
         path=$(cat $conf | awk 'NR==4' | awk '{print $2}' | sed 's/;//')
         port=$(cat $conf | awk 'NR==2' | awk '{print $2}' | sed 's/;//')
         echo "$path        $localhost:$port"
+        logger -t "【ONMP】" "$path     $localhost:$port"
     done
 }
 case $1 in
     start )
     echo "onmp正在启动"
+    logger -t "【ONMP】" "正在启动"
     killall -9 nginx mysqld php-cgi  >/dev/null 2>&1
     sleep 2
     /opt/bin/mysqld &
@@ -229,17 +228,21 @@ case $1 in
     sleep 2
     nginx
     echo "onmp已启动"
+    logger -t "【ONMP】" "已启动"
     vhost_list
     ;;
 
     stop )
     echo "onmp正在停止"
+    logger -t "【ONMP】" "正在停止"
     killall -9 nginx mysqld php-cgi
     echo "onmp已停止"
+    logger -t "【ONMP】" "已停止"
     ;;
 
     restart )
     echo "onmp正在重启"
+    logger -t "【ONMP】" "正在重启"
     killall -9 nginx mysqld php-cgi  >/dev/null 2>&1
     sleep 2
     /opt/bin/mysqld &
@@ -248,18 +251,57 @@ case $1 in
     sleep 2
     nginx
     echo "onmp已经重启"
+    logger -t "【ONMP】" "已重启"
     vhost_list
     ;;
-
+    list )
+    vhost_list
+    ;;
     * )
     echo "----------------------------------------"
     echo "|****  请用以下命令启动 停止 重启ONMP  ****|"
     echo "|*****  onmp start|stop|restart   *****|"
+    echo "|*******  查看网站列表 onmp list  *******|"
     echo "----------------------------------------"
     ;;
 esac
 EOF
+cat > "/opt/etc/init.d/Sonmp" <<-\MMM
+#!/bin/sh
+#onmp web环境
+onmp_start()
+{
+    groupadd www
+    useradd -g www www
+    chown -R www:www /opt/wwwroot
+    onmp start
+}
+onmp_stop()
+{
+    onmp stop
+}
+onmp_restart()
+{
+    onmp restart
+}
+case "$1" in
+    start)
+    onmp_start
+    ;;
+    stop)
+    onmp_stop
+    ;;
+    restart)
+    onmp_restart
+    ;;
+    *)
+    onmp
+    exit 1
+    ;;
+esac
+MMM
 chmod +x /opt/bin/onmp
+chmod +x /opt/etc/init.d/Sonmp
 echo "----------------------------------------"
 echo "|**********  onmp命令已经生成  **********|"
 echo "|****  请用以下命令启动 停止 重启ONMP  ****|"
@@ -385,18 +427,6 @@ sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
 
-# 网站列表
-vhost_list()
-{
-    echo "网站列表："
-    for conf in /opt/etc/nginx/vhost/*;
-    do
-        path=$(cat $conf | awk 'NR==4' | awk '{print $2}' | sed 's/;//')
-        port=$(cat $conf | awk 'NR==2' | awk '{print $2}' | sed 's/;//')
-        echo "$path        $localhost:$port"
-    done
-}
-
 # 脚本开始
 start()
 {
@@ -429,7 +459,7 @@ case $input in
 ;;
 6) install_website
 ;;
-7) vhost_list
+7) onmp list
 ;;
 0) break
 ;;
