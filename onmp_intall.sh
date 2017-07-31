@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-08-01 01:41:23
+# @Last Modified time: 2017-08-01 05:09:59
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -116,6 +116,10 @@ OOO
         killall -9 php-cgi
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
+    sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
+    sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
+    sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
+    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 20M/g" -i /opt/etc/php.ini
     sed -e "s/.*user = nobody.*/user = www/g" -i /opt/etc/php7-fpm.d/www.conf
     sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
@@ -297,15 +301,17 @@ cat << AAA
 (1) phpMyAdmin（数据库管理工具）
 (2) WordPress（使用最广泛的CMS）
 (3) h5ai (优秀的文件目录)
+(4) Lychee (一个很好看，易于使用的照片管理系统)
 (0) 退出
 AAA
-read -p "输入你的选择[0-3]: " input
+read -p "输入你的选择[0-4]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
 3) install_h5ai;;
+4) install_lychee;;
 0) exit;;
-*) echo "你输入的数字不是 0 ~ 3 之间的!"
+*) echo "你输入的数字不是 0 ~ 4 之间的!"
 break;;
 esac
 }
@@ -368,7 +374,8 @@ install_phpmyadmin()
     sed -e "s/.*blowfish_secret.*/\$cfg['blowfish_secret'] = 'onmponmponmponmponmponmponmponmp';/g" -i /opt/wwwroot/$webdir/config.inc.php
     onmp restart >/dev/null 2>&1
     echo "phpMyaAdmin安装完成"
-    echo "浏览器地址栏输入：$localhost:82 即可访问"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "phpMyaAdmin的用户、密码就是数据库用户、密码"
 }
 
 # 安装WordPress
@@ -386,6 +393,7 @@ install_wordpress()
     onmp restart >/dev/null 2>&1
     echo "WordPress安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "可以用phpMyaAdmin建立数据库，然后在这个站点上一步步配置网站信息"
 }
 
 # 安装h5ai
@@ -403,9 +411,26 @@ install_h5ai()
     sed -e "s/.*\index index.html.*/    index  index.html  index.php  \/_h5ai\/public\/index.php;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
     echo "h5ai安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "配置文件在/opt/wwwroot/$webdir/_h5ai/private/conf/options.json"
     echo "你可以通过修改它来获取更多功能"
+}
+
+# 安装Lychee
+install_lychee()
+{
+    filelink="https://github.com/electerious/Lychee/archive/master.zip"
+    web_installer $filelink Lychee Lychee-master
+    echo "正在配置Lychee..."
+    chown -R www:www /opt/wwwroot
+    chmod -R 777 /opt/wwwroot/$webdir/uploads/ /opt/wwwroot/$webdir/data/
+    add_vhost $port $webdir
+    onmp restart >/dev/null 2>&1
+    echo "Lychee安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "首次打开会要配置数据库信息"
+    echo "地址：127.0.0.1 用户、密码你自己设置的或者默认是root 123456"
+    echo "下面的可以不配置，然后下一步创建个用户就可以用了"
 }
 # 添加网站
 add_vhost()
