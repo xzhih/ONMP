@@ -1,8 +1,8 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   triton2
-# @Last Modified time: 2017-07-31 05:32:18
+# @Last Modified by:   xuzhihao
+# @Last Modified time: 2017-08-01 01:41:23
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -117,8 +117,7 @@ OOO
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
     sed -e "s/.*user = nobody.*/user = www/g" -i /opt/etc/php7-fpm.d/www.conf
-    sed -e "s/.*;group =.*/group = www/g" -i /opt/etc/php7-fpm.d/www.conf
-    sed -e "s/.*listen = \/opt\/var\/run\/php7-fpm.sock.*/listen = 127.0.0.1:9000/g" -i /opt/etc/php7-fpm.d/www.conf
+    sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
     # 生成ONMP命令
     set_onmp_sh
@@ -137,6 +136,8 @@ reset_sql()
     rm -rf /opt/var/mysql
     sed -e "s/.*user.*/user        = admin/g" -i /opt/etc/mysql/my.cnf
     sed -e "s/^pid-file.*/socket      = \/opt\/tmp\/mysql\.sock/g" -i /opt/etc/mysql/my.cnf
+    sed -e "/^thread_concurrency/d" -i /opt/etc/mysql/my.cnf
+
     mkdir -p /opt/mysql/
     /opt/bin/mysql_install_db 1>/dev/null
     /opt/bin/mysqld &
@@ -295,54 +296,33 @@ cat << AAA
 ----------------------------------------
 (1) phpMyAdmin（数据库管理工具）
 (2) WordPress（使用最广泛的CMS）
-
+(3) h5ai (优秀的文件目录)
+(0) 退出
 AAA
-read -p "输入你的选择[1-2]: " input
+read -p "输入你的选择[0-3]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
-*) echo "你输入的数字不是 1 到 2 之间的!"
+3) install_h5ai;;
+0) exit;;
+*) echo "你输入的数字不是 0 ~ 3 之间的!"
 break;;
 esac
 }
 
-# 安装phpMyAdmin
-install_phpmyadmin()
+# WEB程序安装器
+web_installer()
 {
-    if [ ! -d "/opt/wwwroot/phpmyadmin/libraries" ] ; then
-        rm -rf /opt/etc/nginx/vhost/phpmyadmin.conf
-        if [[ ! -f /opt/wwwroot/phpmyadmin.zip ]]; then
-            wget --no-check-certificate -O /opt/wwwroot/phpmyadmin.zip https://files.phpmyadmin.net/phpMyAdmin/4.7.3/phpMyAdmin-4.7.3-all-languages.zip
-        fi
-        echo "正在解压..."
-        unzip /opt/wwwroot/phpmyadmin.zip -d /opt/wwwroot/ >/dev/null 2>&1
-        echo "解压完成..."
-        mv /opt/wwwroot/phpMyAdmin* /opt/wwwroot/phpmyadmin
-    fi
-    if [ ! -d "/opt/wwwroot/phpmyadmin/libraries" ] ; then
-        echo "安装未成功"
-    else
-        chown -R www:www /opt/wwwroot
-        add_vhost 82 phpmyadmin
-        echo "正在配置phpmyadmin..."
-        cp /opt/wwwroot/phpmyadmin/config.sample.inc.php /opt/wwwroot/phpmyadmin/config.inc.php
-        sed -e "s/.*blowfish_secret.*/\$cfg['blowfish_secret'] = 'onmponmponmponmponmponmponmponmp';/g" -i /opt/wwwroot/phpmyadmin/config.inc.php
-        chmod 644 /opt/wwwroot/phpmyadmin/config.inc.php
-        onmp restart >/dev/null 2>&1
-        echo "phpMyaAdmin安装完成"
-        echo "浏览器地址栏输入：$localhost:82 即可访问"
-    fi
-}
-
-# 安装WordPress
-install_wordpress()
-{
+    filelink=$1
+    zipfilename=$2
+    dirname=$3
     clear
     echo "----------------------------------------"
-    echo "|*********  WordPress安装程序  *********|"
+    echo "|***********  WEB程序安装器  ***********|"
     echo "----------------------------------------"
+    echo "安装 $2："
     read -p "输入服务端口（请避开已使用的端口）: " port
-    read -p "输入网站目录名（如：wordpress）: " webdir
+    read -p "输入目录名（如：wordpress）: " webdir
     if [ ! -d "/opt/wwwroot/$webdir" ] ; then
         echo "开始安装..."
     else
@@ -357,30 +337,76 @@ esac
 fi
 if [ ! -d "/opt/wwwroot/$webdir" ] ; then
     rm -rf /opt/etc/nginx/vhost/$webdir.conf
-    if [[ ! -f /opt/wwwroot/wordpress.zip ]]; then
-        wget --no-check-certificate -O /opt/wwwroot/wordpress.zip https://cn.wordpress.org/wordpress-4.8-zh_CN.zip
+    if [[ ! -f /opt/wwwroot/$zipfilename.zip ]]; then
+        wget --no-check-certificate -O /opt/wwwroot/$zipfilename.zip $filelink
     fi
-    echo "正在解压..."
-    unzip /opt/wwwroot/wordpress.zip -d /opt/wwwroot/ >/dev/null 2>&1
-    mv /opt/wwwroot/wordpress /opt/wwwroot/$webdir
-    echo "解压完成..."
+    if [[ ! -f /opt/wwwroot/$zipfilename.zip ]]; then
+        echo "下载未成功"
+    else
+        echo "正在解压..."
+        unzip /opt/wwwroot/$zipfilename.zip -d /opt/wwwroot/ >/dev/null 2>&1
+        mv /opt/wwwroot/$dirname /opt/wwwroot/$webdir
+        echo "解压完成..."
+    fi
 fi
 if [ ! -d "/opt/wwwroot/$webdir" ] ; then
     echo "安装未成功"
-else
+    exit
+fi
+}
+
+# 安装phpMyAdmin
+install_phpmyadmin()
+{
+    filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.3/phpMyAdmin-4.7.3-all-languages.zip"
+    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.3-all-languages
+    echo "正在配置phpmyadmin..."
+    chown -R www:www /opt/wwwroot
+    cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
+    chmod 644 /opt/wwwroot/$webdir/config.inc.php
+    add_vhost $port $webdir
+    sed -e "s/.*blowfish_secret.*/\$cfg['blowfish_secret'] = 'onmponmponmponmponmponmponmponmp';/g" -i /opt/wwwroot/$webdir/config.inc.php
+    onmp restart >/dev/null 2>&1
+    echo "phpMyaAdmin安装完成"
+    echo "浏览器地址栏输入：$localhost:82 即可访问"
+}
+
+# 安装WordPress
+install_wordpress()
+{
+    filelink="https://cn.wordpress.org/wordpress-4.8-zh_CN.zip"
+    web_installer $filelink WordPress wordpress
     echo "正在配置WordPress..."
+    chown -R www:www /opt/wwwroot
     echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
-    chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
     sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/wordpress.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
     echo "WordPress安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
-fi
 }
 
+# 安装h5ai
+install_h5ai()
+{
+    filelink="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
+    web_installer $filelink h5ai _h5ai
+    echo "正在配置h5ai..."
+    mv /opt/wwwroot/$webdir /opt/wwwroot/_h5ai
+    mkdir -p /opt/wwwroot/$webdir/ 
+    mv /opt/wwwroot/_h5ai /opt/wwwroot/$webdir/
+    cp /opt/wwwroot/$webdir/_h5ai/README.md /opt/wwwroot/$webdir/
+    chown -R www:www /opt/wwwroot
+    add_vhost $port $webdir
+    sed -e "s/.*\index index.html.*/    index  index.html  index.php  \/_h5ai\/public\/index.php;/g" -i /opt/etc/nginx/vhost/$webdir.conf
+    onmp restart >/dev/null 2>&1
+    echo "h5ai安装完成"
+    echo "配置文件在/opt/wwwroot/$webdir/_h5ai/private/conf/options.json"
+    echo "你可以通过修改它来获取更多功能"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+}
 # 添加网站
 add_vhost()
 {
@@ -393,7 +419,7 @@ server {
     index index.html index.htm index.php tz.php;
     location ~ \.php$ {
         try_files                       $uri = 404;
-        fastcgi_pass                    127.0.0.1:9000;
+        fastcgi_pass                    unix:/opt/var/run/php7-fpm.sock;
         fastcgi_index                   index.php;
         fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
         include                         fastcgi_params;
@@ -441,7 +467,7 @@ case $input in
 ;;
 0) break
 ;;
-*) echo "你输入的数字不是 0 到 6 之间的!"
+*) echo "你输入的数字不是 0 ~ 6 之间的!"
 break
 ;;
 esac 
