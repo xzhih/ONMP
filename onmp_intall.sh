@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-08-01 18:01:22
+# @Last Modified time: 2017-08-01 23:09:50
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -79,11 +79,11 @@ http {
     server_names_hash_bucket_size   128;
     gzip                            on;
     gzip_vary                       on;
-    gzip_types                      text/plain application/javascript application/x-javascript text/javascript text/css application/xml application/xml+rss;
-    gzip_proxied                    expired no-cache no-store private auth;
+    gzip_proxied                    expired no-cache no-store private no_last_modified no_etag auth;
+    gzip_types                      application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
     gzip_disable                    "MSIE [1-6]\.";
     gzip_buffers                    4 16k;
-    gzip_comp_level                 2;
+    gzip_comp_level                 4;
     gzip_min_length                 1k;
     gzip_http_version               1.1;
     fastcgi_buffers                 4 64k;
@@ -97,6 +97,56 @@ http {
     include                         /opt/etc/nginx/vhost/*.conf;
 }
 EOF
+# 特定程序的nginx配置
+cat > "/opt/etc/nginx/conf/nextcloud.conf" <<-\OOO
+location = /.well-known/carddav {
+  return 301 $scheme://$host/remote.php/dav;
+}
+location = /.well-known/caldav {
+  return 301 $scheme://$host/remote.php/dav;
+}
+location / {
+    rewrite ^ /index.php$uri;
+}
+location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+    deny all;
+}
+location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
+    deny all;
+}
+location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+)\.php(?:$|/) {
+    fastcgi_split_path_info ^(.+\.php)(/.*)$;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param PATH_INFO $fastcgi_path_info;
+    #Avoid sending the security headers twice
+    fastcgi_param modHeadersAvailable true;
+    fastcgi_param front_controller_active true;
+    fastcgi_pass unix:/opt/var/run/php7-fpm.sock;
+    fastcgi_intercept_errors on;
+    fastcgi_request_buffering off;
+}
+location ~ ^/(?:updater|ocs-provider)(?:$|/) {
+    try_files $uri/ =404;
+    index index.php;
+}
+location ~ \.(?:css|js|woff|svg|gif)$ {
+    try_files $uri /index.php$uri$is_args$args;
+    add_header Cache-Control "public, max-age=15778463";
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Robots-Tag none;
+    add_header X-Download-Options noopen;
+    add_header X-Permitted-Cross-Domain-Policies none;
+    # Optional: Don't log access to assets
+    access_log off;
+}
+location ~ \.(?:png|html|ttf|ico|jpg|jpeg)$ {
+    try_files $uri /index.php$uri$is_args$args;
+    # Optional: Don't log access to other assets
+    access_log off;
+}
+OOO
 cat > "/opt/etc/nginx/conf/wordpress.conf" <<-\OOO
 location / {
     try_files $uri $uri/ /index.php?$args;
@@ -140,8 +190,11 @@ myisam_sort_buffer_size         = 8M
 
 server-id                       = 1
 
+innodb_file_format              = barracuda 
+innodb_large_prefix             = on 
 innodb_data_home_dir            = /opt/var/mysql
 innodb_log_file_size            = 5M
+innodb_file_per_table           = true
 innodb_use_sys_malloc           = 0
 innodb_data_file_path           = ibdata1:10M:autoextend
 default-storage-engine          = innodb
@@ -178,7 +231,7 @@ reset_sql
         killall -9 php-cgi
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
-    sed -e "s/.*memory_limit = .*/memory_limit = 128M/g" -i /opt/etc/php.ini
+    sed -e "s/.*memory_limit = .*/memory_limit = 64M/g" -i /opt/etc/php.ini
     sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
     sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
     sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 1000M/g" -i /opt/etc/php.ini
@@ -210,9 +263,9 @@ reset_sql()
 
     mkdir -p /opt/mysql/
     /opt/bin/mysql_install_db 1>/dev/null
-    /opt/bin/mysqld &
+    /opt/bin/mysqld >/dev/null 2>&1 &
     if [ `ps | grep mysqld |wc -l` -ne 2 ];then
-        /opt/bin/mysqld &
+        /opt/bin/mysqld >/dev/null 2>&1 &
     fi
     sleep 2
     echo -e "\n正在初始化数据库，请稍等"
@@ -272,7 +325,7 @@ case $1 in
     logger -t "【ONMP】" "正在启动"
     killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
     sleep 2
-    /opt/bin/mysqld &
+    /opt/bin/mysqld >/dev/null 2>&1 & 
     sleep 2
     /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
     sleep 2
@@ -295,7 +348,7 @@ case $1 in
     logger -t "【ONMP】" "正在重启"
     killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
     sleep 2
-    /opt/bin/mysqld &
+    /opt/bin/mysqld >/dev/null 2>&1 &
     sleep 2
     /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
     sleep 2
@@ -375,18 +428,20 @@ cat << AAA
 ----------------------------------------
 (1) phpMyAdmin（数据库管理工具）
 (2) WordPress（使用最广泛的CMS）
-(3) h5ai (优秀的文件目录)
-(4) Lychee (一个很好看，易于使用的照片管理系统)
+(3) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
+(4) h5ai（优秀的文件目录）
+(5) Lychee（一个很好看，易于使用的照片管理系统）
 (0) 退出
 AAA
-read -p "输入你的选择[0-4]: " input
+read -p "输入你的选择[0-5]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
-3) install_h5ai;;
-4) install_lychee;;
+3) install_nextcloud;;
+4) install_h5ai;;
+5) install_lychee;;
 0) exit;;
-*) echo "你输入的数字不是 0 ~ 4 之间的!"
+*) echo "你输入的不是 0 ~ 5 之间的!"
 break;;
 esac
 }
@@ -403,7 +458,7 @@ web_installer()
     echo "----------------------------------------"
     echo "安装 $2："
     read -p "输入服务端口（请避开已使用的端口）: " port
-    read -p "输入目录名（如：wordpress）: " webdir
+    read -p "输入目录名（如：$2）: " webdir
     if [ ! -d "/opt/wwwroot/$webdir" ] ; then
         echo "开始安装..."
     else
@@ -507,6 +562,24 @@ install_lychee()
     echo "地址：127.0.0.1 用户、密码你自己设置的或者默认是root 123456"
     echo "下面的可以不配置，然后下一步创建个用户就可以用了"
 }
+
+# 安装Nextcloud
+install_nextcloud()
+{
+    filelink="https://download.nextcloud.com/server/releases/nextcloud-12.0.0.zip"
+    web_installer $filelink Nextcloud nextcloud
+    echo "正在配置Nextcloud..."
+    chown -R www:www /opt/wwwroot
+    add_vhost $port $webdir
+    sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/nextcloud.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
+    onmp restart >/dev/null 2>&1
+    echo "Nextcloud安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "首次打开会要配置数据库信息"
+    echo "地址：127.0.0.1 用户、密码你自己设置的或者默认是root 123456"
+    echo "下面的可以不配置，然后下一步创建个用户就可以用了"
+}
+
 # 添加网站
 add_vhost()
 {
@@ -517,8 +590,12 @@ server {
     server_name  localhost;
     root  /opt/wwwroot/www/;
     index index.html index.htm index.php tz.php;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Robots-Tag none;
+    add_header X-Download-Options noopen;
+    add_header X-Permitted-Cross-Domain-Policies none;
     location ~ \.php$ {
-        try_files                       $uri = 404;
         fastcgi_pass                    unix:/opt/var/run/php7-fpm.sock;
         fastcgi_index                   index.php;
         fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
@@ -564,7 +641,7 @@ case $input in
 ;;
 0) break
 ;;
-*) echo "你输入的数字不是 0 ~ 6 之间的!"
+*) echo "你输入的不是 0 ~ 6 之间的!"
 break
 ;;
 esac 
