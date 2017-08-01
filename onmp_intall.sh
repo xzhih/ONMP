@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-08-01 05:09:59
+# @Last Modified time: 2017-08-01 18:01:22
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -104,22 +104,84 @@ location / {
 rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 OOO
     # 添加探针
-    cp ./default /opt/wwwroot/ -R
+    cp /opt/ONMP-master/default /opt/wwwroot/ -R
     chown -R www:www /opt/wwwroot/default
     add_vhost 81 default
 
-    # MySQL设置
-    reset_sql
+# MySQL设置
+cat > "/opt/etc/mysql/my.cnf" <<-\MMM
+[client-server]
+port                            = 3306
+socket                          = /opt/tmp/mysql.sock
+
+[mysqld]
+user                            = admin
+port                            = 3306
+socket                          = /opt/tmp/mysql.sock
+
+basedir                         = /opt
+tmpdir                          = /opt/tmp/
+datadir                         = /opt/var/mysql/
+
+lc_messages                     = en_US
+lc_messages_dir                 = /opt/share/mysql
+
+skip-external-locking
+
+bind-address                    = 127.0.0.1
+key_buffer_size                 = 16M
+table_open_cache                = 64
+read_buffer_size                = 256K
+sort_buffer_size                = 512K
+net_buffer_length               = 8K
+max_allowed_packet              = 1M
+read_rnd_buffer_size            = 512K
+myisam_sort_buffer_size         = 8M
+
+server-id                       = 1
+
+innodb_data_home_dir            = /opt/var/mysql
+innodb_log_file_size            = 5M
+innodb_use_sys_malloc           = 0
+innodb_data_file_path           = ibdata1:10M:autoextend
+default-storage-engine          = innodb
+innodb_log_buffer_size          = 8M
+innodb_buffer_pool_size         = 16M
+innodb_autoinc_lock_mode        = 2
+innodb_lock_wait_timeout        = 50
+innodb_log_group_home_dir       = /opt/var/mysql
+innodb_flush_log_at_trx_commit  = 1
+innodb_additional_mem_pool_size = 2M
+
+[mysqldump]
+quick
+max_allowed_packet              = 16M
+
+[mysql]
+no-auto-rehash
+
+[myisamchk]
+read_buffer                     = 2M
+write_buffer                    = 2M
+key_buffer_size                 = 20M
+sort_buffer_size                = 20M
+
+[mysqlhotcopy]
+interactive-timeout
+
+!includedir /opt/etc/mysql/conf.d/
+MMM
+reset_sql
 
     # PHP7设置 
     if [ `ps | grep php-cgi |wc -l` -ne 1 ];then
         killall -9 php-cgi
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
-    sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
+    sed -e "s/.*memory_limit = .*/memory_limit = 128M/g" -i /opt/etc/php.ini
     sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
     sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
-    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 20M/g" -i /opt/etc/php.ini
+    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 1000M/g" -i /opt/etc/php.ini
     sed -e "s/.*user = nobody.*/user = www/g" -i /opt/etc/php7-fpm.d/www.conf
     sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
@@ -131,6 +193,13 @@ OOO
     echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
 
+#设置数据库密码
+set_passwd()
+{
+    echo -e "\033[41;37m 初始密码：123456 \033[0m"
+    mysqladmin -u root -p password
+}
+
 # 重置数据库
 reset_sql()
 {
@@ -138,9 +207,6 @@ reset_sql()
     killall -9 mysqld
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
-    sed -e "s/.*user.*/user        = admin/g" -i /opt/etc/mysql/my.cnf
-    sed -e "s/^pid-file.*/socket      = \/opt\/tmp\/mysql\.sock/g" -i /opt/etc/mysql/my.cnf
-    sed -e "/^thread_concurrency/d" -i /opt/etc/mysql/my.cnf
 
     mkdir -p /opt/mysql/
     /opt/bin/mysql_install_db 1>/dev/null
@@ -178,8 +244,9 @@ remove_onmp()
 # 生成ONMP命令
 set_onmp_sh()
 {
-# 删除onmp
+# 删除
 rm -rf /opt/bin/onmp
+rm -rf /opt/etc/init.d/Sonmp
 cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
@@ -196,6 +263,10 @@ vhost_list()
     done
 }
 case $1 in
+    open ) 
+    /opt/ONMP-master/onmp_intall.sh
+    ;;
+
     start )
     echo "onmp正在启动"
     logger -t "【ONMP】" "正在启动"
@@ -238,7 +309,9 @@ case $1 in
     ;;
     * )
     echo "----------------------------------------"
-    echo "|****  请用以下命令启动 停止 重启ONMP  ****|"
+    echo "|*************  onmp 命令  *************|"
+    echo "|**********  管理 onmp open  **********|"
+    echo "|*********  启动 停止 重启ONMP  *********|"
     echo "|*****  onmp start|stop|restart   *****|"
     echo "|*******  查看网站列表 onmp list  *******|"
     echo "----------------------------------------"
@@ -284,8 +357,10 @@ chmod +x /opt/bin/onmp
 chmod +x /opt/etc/init.d/Sonmp
 echo "----------------------------------------"
 echo "|**********  onmp命令已经生成  **********|"
-echo "|****  请用以下命令启动 停止 重启ONMP  ****|"
+echo "|**********  管理 onmp open  **********|"
+echo "|*********  启动 停止 重启ONMP  *********|"
 echo "|*****  onmp start|stop|restart   *****|"
+echo "|*******  查看网站列表 onmp list  *******|"
 echo "----------------------------------------"
 }
 
@@ -466,11 +541,10 @@ cat << EOF
 ----------------------------------------
 (1) 安装ONMP
 (2) 卸载ONMP
-(3) 重做onmp命令
+(3) 设置数据库密码
 (4) 重置数据库
 (5) 全部重置（会删除网站目录，请注意备份）
 (6) 安装网站程序
-(7) 查看网站列表
 (0) 退出
 
 EOF
@@ -480,15 +554,13 @@ case $input in
 ;;
 2) remove_onmp
 ;;
-3) set_onmp_sh
+3) set_passwd
 ;;
 4) reset_sql
 ;;
 5) init_onmp
 ;;
 6) install_website
-;;
-7) onmp list
 ;;
 0) break
 ;;
