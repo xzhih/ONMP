@@ -1,8 +1,8 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-08-01 23:09:50
+# @Last Modified by:   triton2
+# @Last Modified time: 2017-08-03 23:07:47
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -153,6 +153,7 @@ location / {
 }
 rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 OOO
+
     # 添加探针
     cp /opt/ONMP-master/default /opt/wwwroot/ -R
     chown -R www:www /opt/wwwroot/default
@@ -224,11 +225,12 @@ interactive-timeout
 
 !includedir /opt/etc/mysql/conf.d/
 MMM
+
 reset_sql
 
     # PHP7设置 
-    if [ `ps | grep php-cgi |wc -l` -ne 1 ];then
-        killall -9 php-cgi
+    if [ `ps | grep php-fpm |wc -l` -ne 1 ];then
+        killall -9 php-fpm
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
     sed -e "s/.*memory_limit = .*/memory_limit = 64M/g" -i /opt/etc/php.ini
@@ -251,6 +253,7 @@ set_passwd()
 {
     echo -e "\033[41;37m 初始密码：123456 \033[0m"
     mysqladmin -u root -p password
+    onmp restart
 }
 
 # 重置数据库
@@ -274,6 +277,7 @@ reset_sql()
     killall mysqld
     killall -9 mysqld
     echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
+    onmp restart
 }
 
 # 卸载onmp
@@ -315,6 +319,32 @@ vhost_list()
         logger -t "【ONMP】" "$path     $localhost:$port"
     done
 }
+onmp_restart()
+{
+    killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
+    sleep 2
+    /opt/bin/mysqld >/dev/null 2>&1 &
+    sleep 2
+    /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
+    sleep 2
+    nginx
+    onmplist="nginx mysqld php-fpm"
+    num=0
+    for i in $onmplist; do
+        if [ `ps | grep $i |wc -l` -eq 1 ];then
+            echo "$i 启动失败"
+            $num+1
+        fi
+    done
+    if [[ $num -gt 0 ]]; then
+        echo "onmp启动失败"
+        logger -t "【ONMP】" "启动失败"
+    else
+        echo "onmp已启动"
+        logger -t "【ONMP】" "已启动"
+        vhost_list
+    fi
+}
 case $1 in
     open ) 
     /opt/ONMP-master/onmp_intall.sh
@@ -323,16 +353,7 @@ case $1 in
     start )
     echo "onmp正在启动"
     logger -t "【ONMP】" "正在启动"
-    killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
-    sleep 2
-    /opt/bin/mysqld >/dev/null 2>&1 & 
-    sleep 2
-    /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
-    sleep 2
-    nginx
-    echo "onmp已启动"
-    logger -t "【ONMP】" "已启动"
-    vhost_list
+    onmp_restart
     ;;
 
     stop )
@@ -344,19 +365,11 @@ case $1 in
     ;;
 
     restart )
-    echo "onmp正在重启"
-    logger -t "【ONMP】" "正在重启"
-    killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
-    sleep 2
-    /opt/bin/mysqld >/dev/null 2>&1 &
-    sleep 2
-    /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
-    sleep 2
-    nginx
-    echo "onmp已经重启"
-    logger -t "【ONMP】" "已重启"
-    vhost_list
+    echo "onmp正在停止"
+    logger -t "【ONMP】" "正在停止"
+    onmp_restart
     ;;
+
     list )
     vhost_list
     ;;
@@ -430,7 +443,7 @@ cat << AAA
 (2) WordPress（使用最广泛的CMS）
 (3) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
 (4) h5ai（优秀的文件目录）
-(5) Lychee（一个很好看，易于使用的照片管理系统）
+(5) Lychee（一个很好看，易于使用的Web相册）
 (0) 退出
 AAA
 read -p "输入你的选择[0-5]: " input
