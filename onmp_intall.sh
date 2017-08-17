@@ -1,8 +1,8 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   triton2
-# @Last Modified time: 2017-08-18 02:21:11
+# @Last Modified by:   xuzhihao
+# @Last Modified time: 2017-08-18 04:27:32
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -483,13 +483,20 @@ web_installer()
     filelink=$1
     zipfilename=$2
     dirname=$3
+    port=$4
     clear
     echo "----------------------------------------"
     echo "|***********  WEB程序安装器  ***********|"
     echo "----------------------------------------"
     echo "安装 $2："
-    read -p "输入服务端口（请避开已使用的端口）: " port
-    read -p "输入目录名（如：$2）: " webdir
+    read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
+    if [[ $nport ]]; then
+        $port=$nport
+    fi
+    read -p "输入目录名（留空默认：$zipfilename）: " webdir
+    if [[ ! -n "$webdir" ]]; then
+        webdir=$zipfilename
+    fi
     if [ ! -d "/opt/wwwroot/$webdir" ] ; then
         echo "开始安装..."
     else
@@ -526,7 +533,7 @@ fi
 install_phpmyadmin()
 {
     filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.3/phpMyAdmin-4.7.3-all-languages.zip"
-    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.3-all-languages
+    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.3-all-languages 82
     echo "正在配置phpmyadmin..."
     chown -R www:www /opt/wwwroot
     cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
@@ -543,7 +550,7 @@ install_phpmyadmin()
 install_wordpress()
 {
     filelink="https://cn.wordpress.org/wordpress-4.8-zh_CN.zip"
-    web_installer $filelink WordPress wordpress
+    web_installer $filelink WordPress wordpress 83
     echo "正在配置WordPress..."
     chown -R www:www /opt/wwwroot
     echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
@@ -561,7 +568,7 @@ install_wordpress()
 install_h5ai()
 {
     filelink="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
-    web_installer $filelink h5ai _h5ai
+    web_installer $filelink h5ai _h5ai 85
     echo "正在配置h5ai..."
     mv /opt/wwwroot/$webdir /opt/wwwroot/_h5ai
     mkdir -p /opt/wwwroot/$webdir/ 
@@ -581,7 +588,7 @@ install_h5ai()
 install_lychee()
 {
     filelink="https://github.com/electerious/Lychee/archive/master.zip"
-    web_installer $filelink Lychee Lychee-master
+    web_installer $filelink Lychee Lychee-master 86
     echo "正在配置Lychee..."
     chown -R www:www /opt/wwwroot
     chmod -R 777 /opt/wwwroot/$webdir/uploads/ /opt/wwwroot/$webdir/data/
@@ -598,7 +605,7 @@ install_lychee()
 install_nextcloud()
 {
     filelink="https://download.nextcloud.com/server/releases/nextcloud-12.0.0.zip"
-    web_installer $filelink Nextcloud nextcloud
+    web_installer $filelink Nextcloud nextcloud 87
     echo "正在配置Nextcloud..."
     chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
