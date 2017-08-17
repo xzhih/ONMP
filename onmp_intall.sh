@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-08-04 05:54:54
+# @Last Modified time: 2017-08-18 02:21:11
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -226,7 +226,7 @@ interactive-timeout
 !includedir /opt/etc/mysql/conf.d/
 MMM
 
-reset_sql
+reset_sql >/dev/null 2>&1
 
     # PHP7设置 
     if [ `ps | grep php-fpm |wc -l` -ne 1 ];then
@@ -259,7 +259,6 @@ set_passwd()
 # 重置数据库
 reset_sql()
 {
-    killall mysqld
     killall -9 mysqld
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
@@ -324,15 +323,15 @@ onmp_restart()
     killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
     sleep 2
     /opt/bin/mysqld >/dev/null 2>&1 &
-    sleep 2
     /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
-    sleep 2
     nginx
     onmplist="nginx mysqld php-fpm"
     num=1
     for i in $onmplist; do
+        sleep 2
         if [ `ps | grep $i |wc -l` -eq 1 ];then
             echo "$i 启动失败"
+            nvram set onmp_enable=0
             let num++
         fi
     done
@@ -340,6 +339,7 @@ onmp_restart()
         echo "onmp启动失败"
         logger -t "【ONMP】" "启动失败"
     else
+        nvram set onmp_enable=1
         echo "onmp已启动"
         logger -t "【ONMP】" "已启动"
         vhost_list
@@ -360,13 +360,14 @@ case $1 in
     echo "onmp正在停止"
     logger -t "【ONMP】" "正在停止"
     killall -9 nginx mysqld php-fpm
+    nvram set onmp_enable=0
     echo "onmp已停止"
     logger -t "【ONMP】" "已停止"
     ;;
 
     restart )
-    echo "onmp正在停止"
-    logger -t "【ONMP】" "正在停止"
+    echo "onmp正在重启"
+    logger -t "【ONMP】" "正在重启"
     onmp_restart
     ;;
 
@@ -388,6 +389,38 @@ EOF
 cat > "/opt/etc/init.d/Sonmp" <<-\MMM
 #!/bin/sh
 #onmp web环境
+# while true; do
+#     onmp_status=`nvram get onmp_enable`
+#     if [[ $onmp_status -eq 1 ]]; then
+#         onmplist="nginx mysqld php-fpm"
+#         num=1
+#         for i in $onmplist; do
+#             if [ `ps | grep $i |wc -l` -eq 1 ];then
+#                 let num++
+#             fi
+#         done
+#         if [[ $num -gt 1 ]]; then
+#             onmp start
+#         else
+#             sleep 5
+#         fi
+#         sleep 1
+#     else
+#         onmplist="nginx mysqld php-fpm"
+#         num=1
+#         for i in $onmplist; do
+#             if [ `ps | grep $i |wc -l` -eq 1 ];then
+#                 let num++
+#             fi
+#         done
+#         if [[ $num -gt 1 ]]; then
+#             sleep 5
+#         else
+#             onmp stop
+#         fi
+#         sleep 1
+#     fi
+# done
 onmp_start()
 {
     groupadd www
@@ -395,24 +428,9 @@ onmp_start()
     chown -R www:www /opt/wwwroot
     onmp start
 }
-onmp_stop()
-{
-    onmp stop
-}
-onmp_restart()
-{
-    onmp restart
-}
 case "$1" in
     start)
     onmp_start
-    ;;
-    stop)
-    onmp_stop
-    ;;
-    restart)
-    onmp_restart
-    ;;
     *)
     onmp
     exit 1
