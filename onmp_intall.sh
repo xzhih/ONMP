@@ -2,10 +2,10 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-10-08 16:21:00
+# @Last Modified time: 2017-10-08 18:00:01
 
 #软件包列表
-pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia shadow-groupadd shadow-useradd shadow-usermod libmariadb mariadb-server mariadb-client mariadb-client-extra"
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
 install_check()
 {
@@ -389,9 +389,16 @@ EOF
 # 开机启动
 cat > "/opt/etc/init.d/Sonmp" <<-\MMM
 #!/bin/sh
+onmp_start()
+{
+    groupadd www
+    useradd -g www www
+    chown -R www:www /opt/wwwroot
+    onmp start
+}
 case "$1" in
     start)
-    onmp start
+    onmp_start
     *)
     onmp
     exit 1
@@ -496,6 +503,7 @@ install_phpmyadmin()
     filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.3/phpMyAdmin-4.7.3-all-languages.zip"
     web_installer $filelink phpMyAdmin phpMyAdmin-4.7.3-all-languages 82
     echo "正在配置phpmyadmin..."
+    chown -R www:www /opt/wwwroot
     cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
     chmod 644 /opt/wwwroot/$webdir/config.inc.php
     add_vhost $port $webdir
@@ -512,6 +520,7 @@ install_wordpress()
     filelink="https://cn.wordpress.org/wordpress-4.8-zh_CN.zip"
     web_installer $filelink WordPress wordpress 83
     echo "正在配置WordPress..."
+    chown -R www:www /opt/wwwroot
     echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
@@ -533,6 +542,7 @@ install_h5ai()
     mkdir -p /opt/wwwroot/$webdir/ 
     mv /opt/wwwroot/_h5ai /opt/wwwroot/$webdir/
     cp /opt/wwwroot/$webdir/_h5ai/README.md /opt/wwwroot/$webdir/
+    chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
     sed -e "s/.*\index index.html.*/    index  index.html  index.php  \/_h5ai\/public\/index.php;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
@@ -548,6 +558,7 @@ install_lychee()
     filelink="https://github.com/electerious/Lychee/archive/master.zip"
     web_installer $filelink Lychee Lychee-master 86
     echo "正在配置Lychee..."
+    chown -R www:www /opt/wwwroot
     chmod -R 777 /opt/wwwroot/$webdir/uploads/ /opt/wwwroot/$webdir/data/
     add_vhost $port $webdir
     onmp restart >/dev/null 2>&1
@@ -564,6 +575,7 @@ install_nextcloud()
     filelink="https://download.nextcloud.com/server/releases/nextcloud-12.0.0.zip"
     web_installer $filelink Nextcloud nextcloud 87
     echo "正在配置Nextcloud..."
+    chown -R www:www /opt/wwwroot
     add_vhost $port $webdir
     sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/nextcloud.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
