@@ -1,8 +1,8 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-10-09 14:30:11
+# @Last Modified by:   triton2
+# @Last Modified time: 2017-10-10 12:44:09
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -47,6 +47,9 @@ install_onmp_ipk()
 #初始化onmp
 init_onmp()
 {
+
+username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
+
 # 网站目录
 rm -rf /opt/wwwroot
 mkdir -p /opt/wwwroot/default
@@ -98,7 +101,7 @@ http {
 }
 EOF
 
-sed -e "s/theOne/$USER/g" -i /opt/etc/nginx/nginx.conf
+sed -e "s/theOne/$username/g" -i /opt/etc/nginx/nginx.conf
 
 # 特定程序的nginx配置
 cat > "/opt/etc/nginx/conf/nextcloud.conf" <<-\OOO
@@ -228,7 +231,7 @@ interactive-timeout
 !includedir /opt/etc/mysql/conf.d/
 MMM
 
-sed -e "s/theOne/$USER/g" -i /opt/etc/mysql/my.cnf
+sed -e "s/theOne/$username/g" -i /opt/etc/mysql/my.cnf
 
 reset_sql >/dev/null 2>&1
 
