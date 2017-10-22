@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-10-10 12:44:09
+# @Last Modified time: 2017-10-23 02:55:51
 
 #软件包列表
 pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -55,7 +55,7 @@ rm -rf /opt/wwwroot
 mkdir -p /opt/wwwroot/default
 
 # NGINX设置
-killall -9 nginx
+killall -9 nginx >/dev/null 2>&1
 rm -rf /opt/etc/nginx/vhost 
 rm -rf /opt/etc/nginx/conf
 mkdir -p /opt/etc/nginx/vhost
@@ -76,7 +76,7 @@ http {
     default_type                    application/octet-stream;
     server_tokens                   off;
     keepalive_timeout               60;
-    client_max_body_size            50m;
+    client_max_body_size            2000m;
     client_header_buffer_size       32k;
     large_client_header_buffers     4 32k;
     server_names_hash_bucket_size   128;
@@ -185,14 +185,14 @@ lc_messages_dir                 = /opt/share/mysql
 skip-external-locking
 
 bind-address                    = 127.0.0.1
-key_buffer_size                 = 16M
-table_open_cache                = 64
-read_buffer_size                = 256K
-sort_buffer_size                = 512K
-net_buffer_length               = 8K
-max_allowed_packet              = 1M
-read_rnd_buffer_size            = 512K
-myisam_sort_buffer_size         = 8M
+key_buffer_size                 = 8M
+table_open_cache                = 32
+read_buffer_size                = 128K
+sort_buffer_size                = 256K
+net_buffer_length               = 4K
+max_allowed_packet              = 512K
+read_rnd_buffer_size            = 256K
+myisam_sort_buffer_size         = 4M
 
 server-id                       = 1
 
@@ -204,8 +204,8 @@ innodb_file_per_table           = true
 innodb_use_sys_malloc           = 0
 innodb_data_file_path           = ibdata1:10M:autoextend
 default-storage-engine          = innodb
-innodb_log_buffer_size          = 8M
-innodb_buffer_pool_size         = 16M
+innodb_log_buffer_size          = 4M
+innodb_buffer_pool_size         = 8M
 innodb_autoinc_lock_mode        = 2
 innodb_lock_wait_timeout        = 50
 innodb_log_group_home_dir       = /opt/var/mysql
@@ -214,16 +214,16 @@ innodb_additional_mem_pool_size = 2M
 
 [mysqldump]
 quick
-max_allowed_packet              = 16M
+max_allowed_packet              = 8M
 
 [mysql]
 no-auto-rehash
 
 [myisamchk]
-read_buffer                     = 2M
-write_buffer                    = 2M
-key_buffer_size                 = 20M
-sort_buffer_size                = 20M
+read_buffer                     = 1M
+write_buffer                    = 1M
+key_buffer_size                 = 10M
+sort_buffer_size                = 10M
 
 [mysqlhotcopy]
 interactive-timeout
@@ -240,10 +240,10 @@ reset_sql >/dev/null 2>&1
         killall -9 php-fpm
     fi
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
-    sed -e "s/.*memory_limit = .*/memory_limit = 64M/g" -i /opt/etc/php.ini
+    sed -e "s/.*memory_limit = .*/memory_limit = 90M/g" -i /opt/etc/php.ini
     sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
     sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
-    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 1000M/g" -i /opt/etc/php.ini
+    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
     sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
 cat >> "/opt/etc/php.ini" <<-\PHPINI
@@ -258,10 +258,10 @@ PHPINI
 
 cat >> "/opt/etc/php7-fpm.d/www.conf" <<-\PHPFPM
 env[HOSTNAME] = $HOSTNAME
-env[PATH] = /usr/local/bin:/usr/bin:/bin
-env[TMP] = /tmp
-env[TMPDIR] = /tmp
-env[TEMP] = /tmp
+env[PATH] = /opt/bin:/usr/local/bin:/usr/bin:/bin
+env[TMP] = /opt/tmp
+env[TMPDIR] = /opt/tmp
+env[TEMP] = /opt/tmp
 PHPFPM
 
     # 生成ONMP命令
@@ -347,13 +347,12 @@ onmp_restart()
     /opt/bin/mysqld >/dev/null 2>&1 &
     /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
     nginx
-    onmplist="nginx mysqld php-fpm"
+    onmplist="nginx php-fpm mysqld"
     num=1
     for i in $onmplist; do
         sleep 2
         if [ `ps | grep $i |wc -l` -eq 1 ];then
             echo "$i 启动失败"
-            nvram set onmp_enable=0
             let num++
         fi
     done
@@ -361,7 +360,6 @@ onmp_restart()
         echo "onmp启动失败"
         logger -t "【ONMP】" "启动失败"
     else
-        nvram set onmp_enable=1
         echo "onmp已启动"
         logger -t "【ONMP】" "已启动"
         vhost_list
@@ -382,7 +380,6 @@ case $1 in
     echo "onmp正在停止"
     logger -t "【ONMP】" "正在停止"
     killall -9 nginx mysqld php-fpm
-    nvram set onmp_enable=0
     echo "onmp已停止"
     logger -t "【ONMP】" "已停止"
     ;;
