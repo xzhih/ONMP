@@ -2,11 +2,18 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-10-23 02:55:51
+# @Last Modified time: 2017-10-30 05:19:30
 
-#软件包列表
-pkglist="unzip php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+# 软件包列表
+pkglist="unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+
+# 获取路由器IP
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+if [[ ! -n $localhost ]]; then
+    $localhost="你的路由器IP"
+fi
+
+# 软件包状态检测
 install_check()
 {
     notinstall=""
@@ -20,18 +27,20 @@ install_check()
         fi
     done
 }
+
 # 安装软件包
 install_onmp_ipk()
 {
     opkg update
     opkg upgrade
     install_check
-    if [[ ${#notinstall} -gt 0 ]]; then
-        install_check
-    fi
-    if [[ ${#notinstall} -gt 0 ]]; then
-        install_check
-    fi
+
+    for i in 'seq 3'; do
+        if [[ ${#notinstall} -gt 0 ]]; then
+            install_check
+        fi
+    done
+
     if [[ ${#notinstall} -gt 0 ]]; then
         echo "可能会因为网络问题某些软件包无法安装，请挂全局VPN再次运行命令"
     else
@@ -44,23 +53,24 @@ install_onmp_ipk()
     fi
 }
 
-#初始化onmp
+# 初始化onmp
 init_onmp()
 {
+    # 获取用户名
+    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
 
-username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
+    # 初始化网站目录
+    rm -rf /opt/wwwroot
+    mkdir -p /opt/wwwroot/default
 
-# 网站目录
-rm -rf /opt/wwwroot
-mkdir -p /opt/wwwroot/default
+    # Nginx初始化
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
+    rm -rf /opt/etc/nginx/vhost 
+    rm -rf /opt/etc/nginx/conf
+    mkdir -p /opt/etc/nginx/vhost
+    mkdir -p /opt/etc/nginx/conf
 
-# NGINX设置
-killall -9 nginx >/dev/null 2>&1
-rm -rf /opt/etc/nginx/vhost 
-rm -rf /opt/etc/nginx/conf
-mkdir -p /opt/etc/nginx/vhost
-mkdir -p /opt/etc/nginx/conf
-
+# 初始化nginx配置文件
 cat > "/opt/etc/nginx/nginx.conf" <<-\EOF
 user  theOne root;
 pid /opt/var/run/nginx.pid;
@@ -233,12 +243,11 @@ MMM
 
 sed -e "s/theOne/$username/g" -i /opt/etc/mysql/my.cnf
 
-reset_sql >/dev/null 2>&1
+    # 数据库重置
+    reset_sql >/dev/null 2>&1
 
     # PHP7设置 
-    if [ `ps | grep php-fpm |wc -l` -ne 1 ];then
-        killall -9 php-fpm
-    fi
+    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
     sed -e "/^doc_root/d" -i /opt/etc/php.ini
     sed -e "s/.*memory_limit = .*/memory_limit = 90M/g" -i /opt/etc/php.ini
     sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
@@ -246,6 +255,8 @@ reset_sql >/dev/null 2>&1
     sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
     sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
+
+# 初始化PHP配置文件
 cat >> "/opt/etc/php.ini" <<-\PHPINI
 opcache.enable=1
 opcache.enable_cli=1
@@ -273,6 +284,8 @@ PHPFPM
 #设置数据库密码
 set_passwd()
 {
+    /opt/etc/init.d/S70mariadbd start
+    sleep 3
     echo -e "\033[41;37m 初始密码：123456 \033[0m"
     mysqladmin -u root -p password
     onmp restart
@@ -281,22 +294,17 @@ set_passwd()
 # 重置数据库
 reset_sql()
 {
-    killall -9 mysqld
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
 
-    mkdir -p /opt/mysql/
-    /opt/bin/mysql_install_db 1>/dev/null
-    /opt/bin/mysqld >/dev/null 2>&1 &
-    if [ `ps | grep mysqld |wc -l` -ne 2 ];then
-        /opt/bin/mysqld >/dev/null 2>&1 &
-    fi
-    sleep 2
+    /opt/etc/init.d/S70mariadbd stop > /dev/null 2>&1
+    sleep 3
+    /opt/bin/mysql_install_db
+    sleep 3
     echo -e "\n正在初始化数据库，请稍等"
-    sleep 10
-    mysqladmin -u root password 123456 1>/dev/null
-    killall mysqld
-    killall -9 mysqld
+    /opt/etc/init.d/S70mariadbd start
+    sleep 3
+    mysqladmin -u root password 123456
     echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
     onmp restart
 }
@@ -313,7 +321,6 @@ remove_onmp()
     rm -rf /opt/bin/onmp
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
-    rm -rf /opt/etc/php.ini
     rm -rf /opt/etc/nginx/
     rm -rf /opt/etc/php*
     rm -rf /opt/etc/mysql
@@ -322,12 +329,19 @@ remove_onmp()
 # 生成ONMP命令
 set_onmp_sh()
 {
-# 删除
-rm -rf /opt/bin/onmp
-rm -rf /opt/etc/init.d/Sonmp
+    # 删除
+    rm -rf /opt/bin/onmp
+
+# 写入文件
 cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
+
+# 获取路由器IP
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+if [[ ! -n $localhost ]]; then
+    $localhost="你的路由器IP"
+fi
+
 vhost_list()
 {
     echo "网站列表："
@@ -340,13 +354,14 @@ vhost_list()
         logger -t "【ONMP】" "$path     $localhost:$port"
     done
 }
+
 onmp_restart()
 {
-    killall -9 nginx mysqld php-fpm  >/dev/null 2>&1
+    killall -9 nginx mysqld php-fpm > /dev/null 2>&1
     sleep 2
-    /opt/bin/mysqld >/dev/null 2>&1 &
-    /opt/etc/init.d/S79php7-fpm start  >/dev/null 2>&1
-    nginx
+    /opt/etc/init.d/S70mariadbd start > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm start > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx start > /dev/null 2>&1
     onmplist="nginx php-fpm mysqld"
     num=1
     for i in $onmplist; do
@@ -365,6 +380,7 @@ onmp_restart()
         vhost_list
     fi
 }
+
 case $1 in
     open ) 
     /opt/ONMP-master/onmp_intall.sh
@@ -404,20 +420,8 @@ case $1 in
     ;;
 esac
 EOF
-# 开机启动
-cat > "/opt/etc/init.d/Sonmp" <<-\MMM
-#!/bin/sh
-case "$1" in
-    start)
-    onmp start
-    *)
-    onmp
-    exit 1
-    ;;
-esac
-MMM
+
 chmod +x /opt/bin/onmp
-chmod +x /opt/etc/init.d/Sonmp
 echo "----------------------------------------"
 echo "|**********  onmp命令已经生成  **********|"
 echo "|**********  管理 onmp open  **********|"
@@ -511,8 +515,8 @@ fi
 # 安装phpMyAdmin
 install_phpmyadmin()
 {
-    filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.3/phpMyAdmin-4.7.3-all-languages.zip"
-    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.3-all-languages 82
+    filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.5/phpMyAdmin-4.7.5-all-languages.zip"
+    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.5-all-languages 82
     echo "正在配置phpmyadmin..."
     cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
     chmod 644 /opt/wwwroot/$webdir/config.inc.php
@@ -527,7 +531,7 @@ install_phpmyadmin()
 # 安装WordPress
 install_wordpress()
 {
-    filelink="https://cn.wordpress.org/wordpress-4.8-zh_CN.zip"
+    filelink="https://cn.wordpress.org/wordpress-4.8.1-zh_CN.zip"
     web_installer $filelink WordPress wordpress 83
     echo "正在配置WordPress..."
     chmod -R 777 /opt/wwwroot/$webdir
@@ -597,7 +601,7 @@ install_nextcloud()
 # 添加网站
 add_vhost()
 {
-# 
+# 写入文件
 cat > "/opt/etc/nginx/vhost/$2.conf" <<-\EOF
 server {
     listen 81;
@@ -618,6 +622,7 @@ server {
     #otherconf
 }
 EOF
+
 sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
@@ -639,6 +644,7 @@ cat << EOF
 (0) 退出
 
 EOF
+
 read -p "输入你的选择[0-6]: " input
 case $input in
     1) install_onmp_ipk
