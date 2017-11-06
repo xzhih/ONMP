@@ -2,12 +2,21 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-10-30 05:19:30
+# @Last Modified time: 2017-11-07 04:47:29
 
 # 软件包列表
-pkglist="unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-mysqli php7-mod-pdo-sqlite php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
 
-# 获取路由器IP
+# 获取用户名
+if [[ $USER ]]; then
+    username=$USER
+elif [[ $(whoami 2>/dev/null) ]]; then
+    username=$(whoami 2>/dev/null)
+else
+    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')        
+fi
+
+# 获取网关
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
 if [[ ! -n $localhost ]]; then
     $localhost="你的路由器IP"
@@ -56,19 +65,16 @@ install_onmp_ipk()
 # 初始化onmp
 init_onmp()
 {
-    # 获取用户名
-    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
+# 初始化网站目录
+rm -rf /opt/wwwroot
+mkdir -p /opt/wwwroot/default
 
-    # 初始化网站目录
-    rm -rf /opt/wwwroot
-    mkdir -p /opt/wwwroot/default
-
-    # Nginx初始化
-    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
-    rm -rf /opt/etc/nginx/vhost 
-    rm -rf /opt/etc/nginx/conf
-    mkdir -p /opt/etc/nginx/vhost
-    mkdir -p /opt/etc/nginx/conf
+# Nginx初始化
+/opt/etc/init.d/S80nginx stop > /dev/null 2>&1
+rm -rf /opt/etc/nginx/vhost 
+rm -rf /opt/etc/nginx/conf
+mkdir -p /opt/etc/nginx/vhost
+mkdir -p /opt/etc/nginx/conf
 
 # 初始化nginx配置文件
 cat > "/opt/etc/nginx/nginx.conf" <<-\EOF
@@ -170,9 +176,9 @@ location / {
 rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 OOO
 
-    # 添加探针
-    cp /opt/ONMP-master/default /opt/wwwroot/ -R
-    add_vhost 81 default
+# 添加探针
+cp /opt/ONMP-master/default /opt/wwwroot/ -R
+add_vhost 81 default
 
 # MySQL设置
 cat > "/opt/etc/mysql/my.cnf" <<-\MMM
@@ -243,17 +249,17 @@ MMM
 
 sed -e "s/theOne/$username/g" -i /opt/etc/mysql/my.cnf
 
-    # 数据库重置
-    reset_sql >/dev/null 2>&1
+# 数据库重置
+reset_sql >/dev/null 2>&1
 
-    # PHP7设置 
-    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
-    sed -e "/^doc_root/d" -i /opt/etc/php.ini
-    sed -e "s/.*memory_limit = .*/memory_limit = 90M/g" -i /opt/etc/php.ini
-    sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
-    sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
-    sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
-    sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
+# PHP7设置 
+/opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+sed -e "/^doc_root/d" -i /opt/etc/php.ini
+sed -e "s/.*memory_limit = .*/memory_limit = 90M/g" -i /opt/etc/php.ini
+sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
+sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
+sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
+sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
 
 # 初始化PHP配置文件
@@ -275,10 +281,9 @@ env[TMPDIR] = /opt/tmp
 env[TEMP] = /opt/tmp
 PHPFPM
 
-    # 生成ONMP命令
+# 生成ONMP命令
     set_onmp_sh
     onmp start
-    echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
 
 #设置数据库密码
@@ -329,8 +334,8 @@ remove_onmp()
 # 生成ONMP命令
 set_onmp_sh()
 {
-    # 删除
-    rm -rf /opt/bin/onmp
+# 删除
+rm -rf /opt/bin/onmp
 
 # 写入文件
 cat > "/opt/bin/onmp" <<-\EOF
@@ -353,6 +358,7 @@ vhost_list()
         echo "$path        $localhost:$port"
         logger -t "【ONMP】" "$path     $localhost:$port"
     done
+    echo "浏览器地址栏输入：$localhost:81 查看php探针"
 }
 
 onmp_restart()
@@ -363,15 +369,16 @@ onmp_restart()
     /opt/etc/init.d/S79php7-fpm start > /dev/null 2>&1
     /opt/etc/init.d/S80nginx start > /dev/null 2>&1
     onmplist="nginx php-fpm mysqld"
-    num=1
+    num=0
     for i in $onmplist; do
-        sleep 2
         if [ `ps | grep $i |wc -l` -eq 1 ];then
             echo "$i 启动失败"
-            let num++
+            num=`expr $num + 1`
+        else
+            echo "$i 启动成功"
         fi
     done
-    if [[ $num -gt 1 ]]; then
+    if [[ $num -gt 0 ]]; then
         echo "onmp启动失败"
         logger -t "【ONMP】" "启动失败"
     else
@@ -445,6 +452,7 @@ cat << AAA
 (3) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
 (4) h5ai（优秀的文件目录）
 (5) Lychee（一个很好看，易于使用的Web相册）
+(6) Kodexplorer（可道云aka芒果云在线文档管理器）
 (0) 退出
 AAA
 read -p "输入你的选择[0-5]: " input
@@ -454,6 +462,7 @@ case $input in
 3) install_nextcloud;;
 4) install_h5ai;;
 5) install_lychee;;
+6) install_kodexplorer;;
 0) exit;;
 *) echo "你输入的不是 0 ~ 5 之间的!"
 break;;
@@ -463,67 +472,100 @@ esac
 # WEB程序安装器
 web_installer()
 {
-    filelink=$1
-    zipfilename=$2
-    dirname=$3
-    port=$4
-    clear
-    echo "----------------------------------------"
-    echo "|***********  WEB程序安装器  ***********|"
-    echo "----------------------------------------"
-    echo "安装 $2："
-    read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
-    if [[ $nport ]]; then
-        $port=$nport
-    fi
-    read -p "输入目录名（留空默认：$zipfilename）: " webdir
-    if [[ ! -n "$webdir" ]]; then
-        webdir=$zipfilename
-    fi
-    if [ ! -d "/opt/wwwroot/$webdir" ] ; then
-        echo "开始安装..."
-    else
-        read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
-        case $ans in
-            y ) 
-rm -rf /opt/wwwroot/$webdir 
-echo "已删除";;
+# 
+clear
+echo "----------------------------------------"
+echo "|***********  WEB程序安装器  ***********|"
+echo "----------------------------------------"
+echo "安装 $name："
+
+# 获取用户自定义设置
+read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
+if [[ $nport ]]; then
+    $port=$nport
+fi
+read -p "输入目录名（留空默认：$name）: " webdir
+if [[ ! -n "$webdir" ]]; then
+    webdir=$name
+fi
+
+# 检查目录是否存在
+if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
+    echo "开始安装..."
+else
+    read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
+    case $ans in
+        y ) rm -rf /opt/wwwroot/$webdir; echo "已删除";;
 n ) echo "未删除";;
-* ) echo "没有这个选项" ;;
+* ) echo "没有这个选项"; exit;;
 esac
 fi
-if [ ! -d "/opt/wwwroot/$webdir" ] ; then
+
+# 下载程序并解压
+if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
     rm -rf /opt/etc/nginx/vhost/$webdir.conf
-    if [[ ! -f /opt/wwwroot/$zipfilename.zip ]]; then
-        wget --no-check-certificate -O /opt/wwwroot/$zipfilename.zip $filelink
+    if [[ ! -f /opt/wwwroot/$name.zip ]]; then
+        wget --no-check-certificate -O /opt/wwwroot/$name.zip $filelink
     fi
-    if [[ ! -f /opt/wwwroot/$zipfilename.zip ]]; then
+    if [[ ! -f /opt/wwwroot/$name.zip ]]; then
         echo "下载未成功"
     else
         echo "正在解压..."
-        unzip /opt/wwwroot/$zipfilename.zip -d /opt/wwwroot/ >/dev/null 2>&1
+        unzip /opt/wwwroot/$name.zip -d /opt/wwwroot/$hookdir > /dev/null 2>&1
         mv /opt/wwwroot/$dirname /opt/wwwroot/$webdir
         echo "解压完成..."
     fi
 fi
-if [ ! -d "/opt/wwwroot/$webdir" ] ; then
+
+# 检测是否解压成功
+if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
     echo "安装未成功"
     exit
 fi
 }
 
+# 安装脚本的基本结构
+# install_kodexplorer()
+# {
+#     # 默认配置
+#     filelink=""         # 下载链接
+#     name=""             # 程序名
+#     dirname=""          # 解压后的目录名
+#     port=               # 端口
+#     hookdir=$dirname    # 某些程序解压后不是单个目录，用这个hook解决
+
+#     # 运行安装程序 
+#     web_installer
+#     echo "正在配置$name..."
+#     # chmod -R 777 /opt/wwwroot/$webdir     # 目录权限看情况使用
+
+#     # 添加到虚拟主机
+#     add_vhost $port $webdir
+#     onmp restart >/dev/null 2>&1
+#     echo "$name安装完成"
+#     echo "浏览器地址栏输入：$localhost:$port 即可访问"
+# }
+
 # 安装phpMyAdmin
 install_phpmyadmin()
 {
+    # 默认配置
     filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.5/phpMyAdmin-4.7.5-all-languages.zip"
-    web_installer $filelink phpMyAdmin phpMyAdmin-4.7.5-all-languages 82
-    echo "正在配置phpmyadmin..."
+    name="phpMyAdmin"
+    dirname="phpMyAdmin-*-languages"
+    port=82
+
+    # 运行安装程序
+    web_installer 
+    echo "正在配置$name..."
     cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
     chmod 644 /opt/wwwroot/$webdir/config.inc.php
-    add_vhost $port $webdir
     sed -e "s/.*blowfish_secret.*/\$cfg['blowfish_secret'] = 'onmponmponmponmponmponmponmponmp';/g" -i /opt/wwwroot/$webdir/config.inc.php
+
+    # 添加到虚拟主机
+    add_vhost $port $webdir
     onmp restart >/dev/null 2>&1
-    echo "phpMyaAdmin安装完成"
+    echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "phpMyaAdmin的用户、密码就是数据库用户、密码"
 }
@@ -531,17 +573,25 @@ install_phpmyadmin()
 # 安装WordPress
 install_wordpress()
 {
+    # 默认配置
     filelink="https://cn.wordpress.org/wordpress-4.8.1-zh_CN.zip"
-    web_installer $filelink WordPress wordpress 83
-    echo "正在配置WordPress..."
+    name="WordPress"
+    dirname="wordpress"
+    port=83
+
+    # 运行安装程序
+    web_installer
+    echo "正在配置$name..."
     chmod -R 777 /opt/wwwroot/$webdir
     echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
     echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
+
+    # 添加到虚拟主机
     add_vhost $port $webdir
     sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/wordpress.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
-    echo "WordPress安装完成"
+    echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "可以用phpMyaAdmin建立数据库，然后在这个站点上一步步配置网站信息"
 }
@@ -549,17 +599,23 @@ install_wordpress()
 # 安装h5ai
 install_h5ai()
 {
+    # 默认配置
     filelink="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
-    web_installer $filelink h5ai _h5ai 85
-    echo "正在配置h5ai..."
-    mv /opt/wwwroot/$webdir /opt/wwwroot/_h5ai
-    mkdir -p /opt/wwwroot/$webdir/ 
-    mv /opt/wwwroot/_h5ai /opt/wwwroot/$webdir/
+    name="h5ai"
+    dirname="_h5ai"
+    port=85
+    hookdir=$dirname
+
+    # 运行安装程序
+    web_installer
+    echo "正在配置$name..."
     cp /opt/wwwroot/$webdir/_h5ai/README.md /opt/wwwroot/$webdir/
+
+    # 添加到虚拟主机
     add_vhost $port $webdir
     sed -e "s/.*\index index.html.*/    index  index.html  index.php  \/_h5ai\/public\/index.php;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
-    echo "h5ai安装完成"
+    echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "配置文件在/opt/wwwroot/$webdir/_h5ai/private/conf/options.json"
     echo "你可以通过修改它来获取更多功能"
@@ -568,13 +624,21 @@ install_h5ai()
 # 安装Lychee
 install_lychee()
 {
+    # 默认配置
     filelink="https://github.com/electerious/Lychee/archive/master.zip"
-    web_installer $filelink Lychee Lychee-master 86
-    echo "正在配置Lychee..."
+    name="Lychee"
+    dirname="Lychee-master"
+    port=86
+
+    # 运行安装程序
+    web_installer
+    echo "正在配置$name..."
     chmod -R 777 /opt/wwwroot/$webdir/uploads/ /opt/wwwroot/$webdir/data/
+
+    # 添加到虚拟主机
     add_vhost $port $webdir
     onmp restart >/dev/null 2>&1
-    echo "Lychee安装完成"
+    echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "首次打开会要配置数据库信息"
     echo "地址：127.0.0.1 用户、密码你自己设置的或者默认是root 123456"
@@ -584,21 +648,51 @@ install_lychee()
 # 安装Nextcloud
 install_nextcloud()
 {
+    # 默认配置
     filelink="https://download.nextcloud.com/server/releases/nextcloud-12.0.3.zip"
-    web_installer $filelink Nextcloud nextcloud 99
-    echo "正在配置Nextcloud..."
+    name="Nextcloud"
+    dirname="nextcloud"
+    port=99
+
+    # 运行安装程序
+    web_installer   
+    echo "正在配置$name..."
     chmod -R 777 /opt/wwwroot/$webdir
+
+    # 添加到虚拟主机
     add_vhost $port $webdir
     sed -e "s/.*\#otherconf.*/        include     \/opt\/etc\/nginx\/conf\/nextcloud.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
-    echo "Nextcloud安装完成"
+    echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "首次打开会要配置数据库信息"
     echo "地址：127.0.0.1 用户、密码你自己设置的或者默认是root 123456"
     echo "下面的可以不配置，然后下一步创建个用户就可以用了"
 }
 
-# 添加网站
+# 安装kodexplorer芒果云
+install_kodexplorer()
+{
+    # 默认配置
+    filelink="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
+    name="Kodexplorer"
+    dirname="kodexplorer"
+    port=88
+    hookdir=$dirname
+
+    # 运行安装程序 
+    web_installer
+    echo "正在配置$name..."
+    chmod -R 777 /opt/wwwroot/$webdir
+
+    # 添加到虚拟主机
+    add_vhost $port $webdir
+    onmp restart >/dev/null 2>&1
+    echo "$name安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+}
+
+# 添加到虚拟主机
 add_vhost()
 {
 # 写入文件
@@ -647,23 +741,15 @@ EOF
 
 read -p "输入你的选择[0-6]: " input
 case $input in
-    1) install_onmp_ipk
-;;
-2) remove_onmp
-;;
-3) set_passwd
-;;
-4) reset_sql
-;;
-5) init_onmp
-;;
-6) install_website
-;;
-0) break
-;;
+    1) install_onmp_ipk;;
+2) remove_onmp;;
+3) set_passwd;;
+4) reset_sql;;
+5) init_onmp;;
+6) install_website;;
+0) break;;
 *) echo "你输入的不是 0 ~ 6 之间的!"
-break
-;;
+break;;
 esac 
 }
 
