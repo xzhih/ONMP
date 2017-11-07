@@ -2,24 +2,27 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-11-07 04:47:29
+# @Last Modified time: 2017-11-07 09:15:43
 
 # 软件包列表
-pkglist="unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-mysqli php7-mod-pdo-sqlite php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-mysqli php7-mod-pdo-sqlite php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf libexif nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+
+# 后续可能增加的包(缺少源支持)
+# php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
 
 # 获取用户名
 if [[ $USER ]]; then
     username=$USER
-elif [[ $(whoami 2>/dev/null) ]]; then
+elif [[ -n $(whoami 2>/dev/null) ]]; then
     username=$(whoami 2>/dev/null)
 else
-    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')        
+    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
 fi
 
 # 获取网关
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
-if [[ ! -n $localhost ]]; then
-    $localhost="你的路由器IP"
+if [[ ! -n "$localhost" ]]; then
+    localhost="你的路由器IP"
 fi
 
 # 软件包状态检测
@@ -27,7 +30,7 @@ install_check()
 {
     notinstall=""
     for data in $pkglist ; do
-        if [ `opkg list-installed | grep $data |wc -l` -ne 0 ];then
+        if [ `opkg list-installed | grep $data | wc -l` -ne 0 ];then
             echo "$data 已安装"
         else
             notinstall="$notinstall $data"
@@ -40,6 +43,8 @@ install_check()
 # 安装软件包
 install_onmp_ipk()
 {
+    opkg install busybox > /dev/null 2>&1
+
     opkg update
     opkg upgrade
     install_check
@@ -282,8 +287,8 @@ env[TEMP] = /opt/tmp
 PHPFPM
 
 # 生成ONMP命令
-    set_onmp_sh
-    onmp start
+set_onmp_sh
+onmp start
 }
 
 #设置数据库密码
@@ -343,8 +348,8 @@ cat > "/opt/bin/onmp" <<-\EOF
 
 # 获取路由器IP
 localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
-if [[ ! -n $localhost ]]; then
-    $localhost="你的路由器IP"
+if [[ ! -n "$localhost" ]]; then
+    localhost="你的路由器IP"
 fi
 
 vhost_list()
@@ -464,7 +469,7 @@ case $input in
 5) install_lychee;;
 6) install_kodexplorer;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 5 之间的!"
+*) echo "你输入的不是 0 ~ 6 之间的!"
 break;;
 esac
 }
@@ -507,7 +512,7 @@ if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
     if [[ ! -f /opt/wwwroot/$name.zip ]]; then
         wget --no-check-certificate -O /opt/wwwroot/$name.zip $filelink
     fi
-    if [[ ! -f /opt/wwwroot/$name.zip ]]; then
+    if [[ ! -f "/opt/wwwroot/$name.zip" ]]; then
         echo "下载未成功"
     else
         echo "正在解压..."
@@ -721,6 +726,58 @@ sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
 
+# Swap交换空间
+set_swap()
+{
+    clear
+# 
+cat << SWAP
+----------------------------------------
+|**************** SWAP ****************|
+----------------------------------------
+(1) 开启Swap
+(2) 关闭Swap
+(3) 删除Swap文件
+
+SWAP
+
+read -p "输入你的选择[1-3]: " input
+case $input in
+    1) on_swap;;
+2) swapoff /opt/swapfile;;
+3) del_swap;;
+*) echo "你输入的不是 1 ~ 3 之间的!"
+break;;
+esac 
+}
+
+# 开启Swap
+on_swap()
+{
+    status=$(cat /proc/swaps |  awk 'NR==2')
+    if [[ -n "$status" ]]; then
+        echo "Swap已启用"
+    else
+        if [[ ! -e "/opt/swapfile" ]]; then
+            echo "正在生成swap文件，请耐心等待..."
+            dd if=/dev/zero of=/opt/swapfile bs=1024 count=524288
+            # 设置交换文件
+            mkswap /opt/swapfile
+            # 启用交换分区
+        fi
+        swapon /opt/swapfile
+        echo "现在你可以使用free命令查看swap是否启用"
+    fi
+}
+
+# 删除Swap文件
+del_swap()
+{
+    # 弃用交换分区
+    swapoff /opt/swapfile
+    rm -rf /opt/swapfile
+}
+
 # 脚本开始
 start()
 {
@@ -735,6 +792,7 @@ cat << EOF
 (4) 重置数据库
 (5) 全部重置（会删除网站目录，请注意备份）
 (6) 安装网站程序
+(7) 开启Swap
 (0) 退出
 
 EOF
@@ -747,6 +805,7 @@ case $input in
 4) reset_sql;;
 5) init_onmp;;
 6) install_website;;
+7) set_swap;;
 0) break;;
 *) echo "你输入的不是 0 ~ 6 之间的!"
 break;;
