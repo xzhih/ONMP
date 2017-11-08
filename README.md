@@ -10,12 +10,14 @@ ONMP: Opt(Opkg) + Nginx + MySQL + PHP
 
 ```
 ONMP内置了以下程序的一键安装：
-1. phpMyAdmin（数据库管理工具）
-2. WordPress（使用最广泛的CMS）
-3. Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-4. h5ai（优秀的文件目录）
-5. Lychee（一个很好看，易于使用的Web相册）
-6. Kodexplorer（可道云aka芒果云在线文档管理器）
+(1) phpMyAdmin（数据库管理工具）
+(2) WordPress（使用最广泛的CMS）
+(3) Owncloud（经典的私有云）
+(4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
+(5) h5ai（优秀的文件目录）
+(6) Lychee（一个很好看，易于使用的Web相册）
+(7) Kodexplorer（可道云aka芒果云在线文档管理器）
+(8) Netdata（详细得惊人的服务器监控面板）
 ```
 
 所有的软件包均通过opkg安装，一切配置均在脚本中可见，请放心使用
