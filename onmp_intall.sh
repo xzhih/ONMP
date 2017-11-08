@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xuzhihao
-# @Last Modified time: 2017-11-08 22:07:18
+# @Last Modified time: 2017-11-09 05:33:46
 
 # 软件包列表
 pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -81,12 +81,14 @@ mkdir -p /opt/etc/nginx/conf
 
 # 初始化nginx配置文件
 cat > "/opt/etc/nginx/nginx.conf" <<-\EOF
-user  theOne root;
+user theOne root;
 pid /opt/var/run/nginx.pid;
 worker_processes auto;
-worker_rlimit_nofile 51200;
+worker_rlimit_nofile 65535;
 events {
-    worker_connections  256;
+     use epoll;
+     multi_accept on;
+     worker_connections 51200;
 }
 http {
     sendfile                        on;
@@ -137,6 +139,16 @@ OOO
 
 # nextcloud
 cat > "/opt/etc/nginx/conf/nextcloud.conf" <<-\OOO
+add_header X-Content-Type-Options nosniff;
+add_header X-XSS-Protection "1; mode=block";
+add_header X-Robots-Tag none;
+add_header X-Download-Options noopen;
+add_header X-Permitted-Cross-Domain-Policies none;
+location = /robots.txt {
+    allow all;
+    log_not_found off;
+    access_log off;
+}
 location = /.well-known/carddav {
   return 301 $scheme://$host/remote.php/dav;
 }
@@ -155,11 +167,11 @@ location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
 location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+)\.php(?:$|/) {
     fastcgi_split_path_info ^(.+\.php)(/.*)$;
     include fastcgi_params;
+    fastcgi_pass unix:/opt/var/run/php7-fpm.sock;
     fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     fastcgi_param PATH_INFO $fastcgi_path_info;
     fastcgi_param modHeadersAvailable true;
     fastcgi_param front_controller_active true;
-    fastcgi_pass unix:/opt/var/run/php7-fpm.sock;
     fastcgi_intercept_errors on;
     fastcgi_request_buffering off;
 }
@@ -175,12 +187,10 @@ location ~ \.(?:css|js|woff|svg|gif)$ {
     add_header X-Robots-Tag none;
     add_header X-Download-Options noopen;
     add_header X-Permitted-Cross-Domain-Policies none;
-    # Optional: Don't log access to assets
     access_log off;
 }
 location ~ \.(?:png|html|ttf|ico|jpg|jpeg)$ {
     try_files $uri /index.php$uri$is_args$args;
-    # Optional: Don't log access to other assets
     access_log off;
 }
 OOO
@@ -207,14 +217,12 @@ location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
 location / {
     rewrite ^/remote/(.*) /remote.php last;
     rewrite ^(/core/doc/[^\/]+/)$ $1/index.html;
-
     try_files $uri $uri/ =404;
 }
 location ~* \.(?:css|js)$ {
     add_header Cache-Control "public, max-age=7200";
     access_log off;
 }
-
 location ~* \.(?:jpg|jpeg|gif|bmp|ico|png|swf)$ {
     access_log off;
 }
@@ -239,66 +247,58 @@ port                            = 3306
 socket                          = /opt/tmp/mysql.sock
 
 [mysqld]
-user                            = theOne
-port                            = 3306
-socket                          = /opt/tmp/mysql.sock
-
+user                            = admin
+pid-file                        = /opt/var/run/mariadb.pid
 basedir                         = /opt
-tmpdir                          = /opt/tmp/
-datadir                         = /opt/var/mysql/
-
-lc_messages                     = en_US
 lc_messages_dir                 = /opt/share/mysql
+lc_messages                     = en_US
+datadir                         = /opt/var/mysql/
+tmpdir                          = /opt/tmp/
 
 skip-external-locking
 bind-address                    = 127.0.0.1
+max_connections                 = 25
+connect_timeout                 = 5
+wait_timeout                    = 600
 key_buffer_size                 = 16M
 max_allowed_packet              = 16M
 table_open_cache                = 64
-sort_buffer_size                = 512K
-net_buffer_length               = 8K
+sort_buffer_size                = 64K
 read_buffer_size                = 256K
-read_rnd_buffer_size            = 512K
-myisam_sort_buffer_size         = 8M
-thread_stack                    = 192K
+read_rnd_buffer_size            = 256K
+net_buffer_length               = 2K
+myisam_sort_buffer_size         = 64K
 thread_cache_size               = 8
-query_cache_type                = ON
-query_cache_size                = 16M
-query_cache_limit               = 8M
-log_slow_queries                = ON
-long_query_time                 = 5
-
+thread_stack                    = 128K
+query_cache_limit               = 128K
+query_cache_size                = 2M
 server-id                       = 1
-
-default-storage-engine          = innodb
-innodb_file_format              = barracuda 
-innodb_large_prefix             = on 
-innodb_data_home_dir            = /opt/var/mysql
-innodb_log_file_size            = 5M
-innodb_file_per_table           = true
-innodb_use_sys_malloc           = 0
-innodb_data_file_path           = ibdata1:10M:autoextend
-innodb_log_buffer_size          = 8M
-innodb_buffer_pool_size         = 16M
+default-storage-engine          = myisam
 innodb_autoinc_lock_mode        = 2
-innodb_lock_wait_timeout        = 50
+innodb_flush_method             = O_DIRECT
+innodb_data_home_dir            = /opt/var/mysql
 innodb_log_group_home_dir       = /opt/var/mysql
-innodb_flush_log_at_trx_commit  = 1
+innodb_buffer_pool_size         = 16M
 innodb_additional_mem_pool_size = 2M
+innodb_large_prefix             = ON
+innodb_file_per_table           = ON
+log_warnings                    = 2
+slow_query_log                  = 1
+slow_query_log_file             = /opt/var/log/mariadb-slow.log
+long_query_time                 = 10
+log_slow_rate_limit             = 20
+log_slow_verbosity              = query_plan
 
 [mysqldump]
 quick
-quote-names
-max_allowed_packet  = 16M
+max_allowed_packet              = 16M
 
 [mysql]
-completition
+#no-auto-rehash 
 
 [myisamchk]
-read_buffer                     = 2M
-write_buffer                    = 2M
-key_buffer_size                 = 20M
-sort_buffer_size                = 20M
+key_buffer_size                 = 8M
+sort_buffer_size                = 8M
 
 [mysqlhotcopy]
 interactive-timeout
@@ -312,6 +312,7 @@ reset_sql >/dev/null 2>&1
 # PHP7设置 
 /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
 sed -e "/^doc_root/d" -i /opt/etc/php.ini
+sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
 sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
 sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
 sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
@@ -755,7 +756,7 @@ install_nextcloud()
 
     # 添加到虚拟主机
     add_vhost $port $webdir
-    sed -e "s/.*\#php-fpm.*/    include       \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
+    # nextcloud的配置文件中有php-fpm了, 不需要外部引入
     sed -e "s/.*\#otherconf.*/    include     \/opt\/etc\/nginx\/conf\/nextcloud.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf
     onmp restart >/dev/null 2>&1
     echo "$name安装完成"
@@ -850,7 +851,6 @@ server {
     server_name     localhost;
     root            /opt/wwwroot/www/;
     index index.html index.htm index.php tz.php;
-    include         /opt/etc/nginx/conf/php-fpm.conf;
     #php-fpm
     #otherconf
 }
