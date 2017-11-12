@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-11-12 23:15:55
+# @Last Modified time: 2017-11-12 23:53:16
 
 # 软件包列表
 pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -33,7 +33,11 @@ url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
 url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
 
 # (8) Netdata（详细得惊人的服务器监控面板
-url_Netdata="http://pkg.entware.net/binaries/mipsel/archive/netdata_1.6.0-1_mipselsf.ipk"
+url_Netdata="netdata"
+
+if [[ "mips" = $(uname -m) ]]; then
+    url_Netdata="http://pkg.entware.net/binaries/mipsel/archive/netdata_1.6.0-1_mipselsf.ipk"
+fi
 
 # 通用环境变量获取
 get_env()
@@ -65,7 +69,7 @@ install_check()
         else
             notinstall="$notinstall $data"
             echo "$data 正在安装..."
-            opkg -d opt install $data
+            opkg install $data
         fi
     done
 }
@@ -394,6 +398,10 @@ init_php()
 {
 # PHP7设置 
 /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+
+mkdir -p /opt/usr/php/tmp/
+chmod -R 777 /opt/usr/php/tmp/
+
 sed -e "/^doc_root/d" -i /opt/etc/php.ini
 sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
 sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
@@ -403,6 +411,7 @@ sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
 # PHP配置文件
 cat >> "/opt/etc/php.ini" <<-\PHPINI
+session.save_path = "/opt/usr/php/tmp/"
 opcache.enable=1
 opcache.enable_cli=1
 opcache.interned_strings_buffer=8
