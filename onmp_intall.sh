@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-11-09 22:30:27
+# @Last Modified time: 2017-11-12 23:15:55
 
 # 软件包列表
 pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -10,22 +10,52 @@ pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-m
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
 
-# 获取用户名
-if [[ $USER ]]; then
-    username=$USER
-elif [[ -n $(whoami 2>/dev/null) ]]; then
-    username=$(whoami 2>/dev/null)
-else
-    username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
-fi
+# Web程序
+# (1) phpMyAdmin（数据库管理工具）
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.5/phpMyAdmin-4.7.5-all-languages.zip"
 
-# 获取网关
-localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
-if [[ ! -n "$localhost" ]]; then
-    localhost="你的路由器IP"
-fi
+# (2) WordPress（使用最广泛的CMS）
+url_WordPress="https://cn.wordpress.org/wordpress-4.8.1-zh_CN.zip"
 
-# 软件包状态检测
+# (3) Owncloud（经典的私有云）
+url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.3.zip"
+
+# (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-12.0.3.zip"
+
+# (5) h5ai（优秀的文件目录）
+url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
+
+# (6) Lychee（一个很好看，易于使用的Web相册）
+url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
+
+# (7) Kodexplorer（可道云aka芒果云在线文档管理器）
+url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
+
+# (8) Netdata（详细得惊人的服务器监控面板
+url_Netdata="http://pkg.entware.net/binaries/mipsel/archive/netdata_1.6.0-1_mipselsf.ipk"
+
+# 通用环境变量获取
+get_env()
+{
+    # 获取用户名
+    if [[ $USER ]]; then
+        username=$USER
+    elif [[ -n $(whoami 2>/dev/null) ]]; then
+        username=$(whoami 2>/dev/null)
+    else
+        username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
+    fi
+
+    # 获取网关
+    # localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+    if [[ ! -n "$localhost" ]]; then
+        localhost="你的路由器IP"
+    fi
+
+}
+
+##### 软件包状态检测 #####
 install_check()
 {
     notinstall=""
@@ -35,16 +65,17 @@ install_check()
         else
             notinstall="$notinstall $data"
             echo "$data 正在安装..."
-            opkg install $data
+            opkg -d opt install $data
         fi
     done
 }
 
-# 安装软件包
+############## 安装软件包 #############
 install_onmp_ipk()
 {
     opkg update
-    opkg upgrade
+
+    # 软件包状态检测
     install_check
 
     for i in 'seq 3'; do
@@ -65,19 +96,43 @@ install_onmp_ipk()
     fi
 }
 
-# 初始化onmp
+################ 初始化onmp ###############
 init_onmp()
 {
-# 初始化网站目录
-rm -rf /opt/wwwroot
-mkdir -p /opt/wwwroot/default
+    # 通用环境变量获取
+    get_env
 
-# Nginx初始化
-/opt/etc/init.d/S80nginx stop > /dev/null 2>&1
-rm -rf /opt/etc/nginx/vhost 
-rm -rf /opt/etc/nginx/conf
-mkdir -p /opt/etc/nginx/vhost
-mkdir -p /opt/etc/nginx/conf
+    # 初始化网站目录
+    rm -rf /opt/wwwroot
+    mkdir -p /opt/wwwroot/default
+
+    # 初始化Nginx
+    init_nginx > /dev/null 2>&1
+
+    # 初始化数据库
+    init_sql > /dev/null 2>&1
+
+    # 初始化PHP
+    init_php > /dev/null 2>&1
+
+    # 添加探针
+    cp /opt/ONMP-master/default /opt/wwwroot/ -R
+    add_vhost 81 default
+    sed -e "s/.*\#php-fpm.*/    include     \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/default.conf
+
+    # 生成ONMP命令
+    set_onmp_sh
+    onmp start
+}
+
+############### 初始化Nginx ###############
+init_nginx()
+{
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
+    rm -rf /opt/etc/nginx/vhost 
+    rm -rf /opt/etc/nginx/conf
+    mkdir -p /opt/etc/nginx/vhost
+    mkdir -p /opt/etc/nginx/conf
 
 # 初始化nginx配置文件
 cat > "/opt/etc/nginx/nginx.conf" <<-\EOF
@@ -86,9 +141,9 @@ pid /opt/var/run/nginx.pid;
 worker_processes auto;
 worker_rlimit_nofile 65535;
 events {
-     use epoll;
-     multi_accept on;
-     worker_connections 51200;
+    use epoll;
+    multi_accept on;
+    worker_connections 51200;
 }
 http {
     sendfile                        on;
@@ -126,6 +181,13 @@ EOF
 sed -e "s/theOne/$username/g" -i /opt/etc/nginx/nginx.conf
 
 # 特定程序的nginx配置
+nginx_special_conf
+
+}
+
+##### 特定程序的nginx配置 #####
+nginx_special_conf()
+{
 # php-fpm
 cat > "/opt/etc/nginx/conf/php-fpm.conf" <<-\OOO
 location ~ \.php(?:$|/) {
@@ -228,7 +290,7 @@ location ~* \.(?:jpg|jpeg|gif|bmp|ico|png|swf)$ {
 }
 OOO
 
-# wordpress rewrite
+# wordpress
 cat > "/opt/etc/nginx/conf/wordpress.conf" <<-\OOO
 location / {
     try_files $uri $uri/ /index.php?$args;
@@ -236,10 +298,15 @@ location / {
 rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 OOO
 
-# 添加探针
-cp /opt/ONMP-master/default /opt/wwwroot/ -R
-add_vhost 81 default
-sed -e "s/.*\#php-fpm.*/    include     \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/default.conf
+}
+
+############## 重置、初始化MySQL #############
+init_sql()
+{
+    /opt/etc/init.d/S70mariadbd stop > /dev/null 2>&1
+    sleep 10
+    rm -rf /opt/mysql
+    rm -rf /opt/var/mysql
 
 # MySQL设置
 cat > "/opt/etc/mysql/my.cnf" <<-\MMM
@@ -307,9 +374,24 @@ MMM
 
 sed -e "s/theOne/$username/g" -i /opt/etc/mysql/my.cnf
 
-# 数据库重置
-reset_sql >/dev/null 2>&1
+# 数据库安装
+/opt/bin/mysql_install_db
+echo -e "\n正在初始化数据库，请稍等1分钟"
+sleep 20
 
+# 初次启动MySQL
+/opt/etc/init.d/S70mariadbd start
+sleep 60
+
+# 设置数据库密码
+mysqladmin -u root password 123456
+echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
+onmp restart
+}
+
+############## PHP初始化 #############
+init_php()
+{
 # PHP7设置 
 /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
 sed -e "/^doc_root/d" -i /opt/etc/php.ini
@@ -319,8 +401,7 @@ sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php
 sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
 sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
-
-# 初始化PHP配置文件
+# PHP配置文件
 cat >> "/opt/etc/php.ini" <<-\PHPINI
 opcache.enable=1
 opcache.enable_cli=1
@@ -338,13 +419,9 @@ env[TMP] = /opt/tmp
 env[TMPDIR] = /opt/tmp
 env[TEMP] = /opt/tmp
 PHPFPM
-
-# 生成ONMP命令
-set_onmp_sh
-onmp start
 }
 
-#设置数据库密码
+############# 用户设置数据库密码 ############
 set_passwd()
 {
     /opt/etc/init.d/S70mariadbd start
@@ -354,25 +431,7 @@ set_passwd()
     onmp restart
 }
 
-# 重置数据库
-reset_sql()
-{
-    rm -rf /opt/mysql
-    rm -rf /opt/var/mysql
-
-    /opt/etc/init.d/S70mariadbd stop > /dev/null 2>&1
-    sleep 3
-    /opt/bin/mysql_install_db
-    sleep 10
-    echo -e "\n正在初始化数据库，请稍等1分钟"
-    /opt/etc/init.d/S70mariadbd start
-    sleep 60
-    mysqladmin -u root password 123456
-    echo -e "\033[41;37m 数据库用户：root, 初始密码：123456 \033[0m"
-    onmp restart
-}
-
-# 卸载onmp
+################ 卸载onmp ###############
 remove_onmp()
 {
     killall -9 nginx mysqld php-fpm
@@ -389,7 +448,7 @@ remove_onmp()
     rm -rf /opt/etc/mysql
 }
 
-# 生成ONMP命令
+################ 生成ONMP命令 ###############
 set_onmp_sh()
 {
 # 删除
@@ -400,7 +459,7 @@ cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
 
 # 获取路由器IP
-localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+# localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
 if [[ ! -n "$localhost" ]]; then
     localhost="你的路由器IP"
 fi
@@ -497,9 +556,11 @@ echo "|*******  查看网站列表 onmp list  *******|"
 echo "----------------------------------------"
 }
 
-# 网站程序安装
+############### 网站程序安装 ##############
 install_website()
 {
+    # 通用环境变量获取
+    get_env
     clear
 # 选择程序
 cat << AAA
@@ -532,61 +593,60 @@ break;;
 esac
 }
 
-# WEB程序安装器
+############### WEB程序安装器 ##############
 web_installer()
 {
-# 
-clear
-echo "----------------------------------------"
-echo "|***********  WEB程序安装器  ***********|"
-echo "----------------------------------------"
-echo "安装 $name："
+    clear
+    echo "----------------------------------------"
+    echo "|***********  WEB程序安装器  ***********|"
+    echo "----------------------------------------"
+    echo "安装 $name："
 
-# 获取用户自定义设置
-read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
-if [[ $nport ]]; then
-    $port=$nport
-fi
-read -p "输入目录名（留空默认：$name）: " webdir
-if [[ ! -n "$webdir" ]]; then
-    webdir=$name
-fi
+    # 获取用户自定义设置
+    read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
+    if [[ $nport ]]; then
+        $port=$nport
+    fi
+    read -p "输入目录名（留空默认：$name）: " webdir
+    if [[ ! -n "$webdir" ]]; then
+        webdir=$name
+    fi
 
-# 检查目录是否存在
-if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
-    echo "开始安装..."
-else
-    read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
-    case $ans in
-        y ) rm -rf /opt/wwwroot/$webdir; echo "已删除";;
+    # 检查目录是否存在
+    if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
+        echo "开始安装..."
+    else
+        read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
+        case $ans in
+            y ) rm -rf /opt/wwwroot/$webdir; echo "已删除";;
 n ) echo "未删除";;
 * ) echo "没有这个选项"; exit;;
 esac
 fi
 
-# 下载程序并解压
-if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
-    rm -rf /opt/etc/nginx/vhost/$webdir.conf
-    if [[ ! -f /opt/wwwroot/$name.zip ]]; then
-        rm -rf /opt/tmp/$name.zip
-        wget --no-check-certificate -O /opt/tmp/$name.zip $filelink
-        mv /opt/tmp/$name.zip /opt/wwwroot/
+    # 下载程序并解压
+    if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
+        rm -rf /opt/etc/nginx/vhost/$webdir.conf
+        if [[ ! -f /opt/wwwroot/$name.zip ]]; then
+            rm -rf /opt/tmp/$name.zip
+            wget --no-check-certificate -O /opt/tmp/$name.zip $filelink
+            mv /opt/tmp/$name.zip /opt/wwwroot/
+        fi
+        if [[ ! -f "/opt/wwwroot/$name.zip" ]]; then
+            echo "下载未成功"
+        else
+            echo "正在解压..."
+            unzip /opt/wwwroot/$name.zip -d /opt/wwwroot/$hookdir > /dev/null 2>&1
+            mv /opt/wwwroot/$dirname /opt/wwwroot/$webdir
+            echo "解压完成..."
+        fi
     fi
-    if [[ ! -f "/opt/wwwroot/$name.zip" ]]; then
-        echo "下载未成功"
-    else
-        echo "正在解压..."
-        unzip /opt/wwwroot/$name.zip -d /opt/wwwroot/$hookdir > /dev/null 2>&1
-        mv /opt/wwwroot/$dirname /opt/wwwroot/$webdir
-        echo "解压完成..."
-    fi
-fi
 
-# 检测是否解压成功
-if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
-    echo "安装未成功"
-    exit
-fi
+    # 检测是否解压成功
+    if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
+        echo "安装未成功"
+        exit
+    fi
 }
 
 # 安装脚本的基本结构
@@ -612,11 +672,11 @@ fi
 #     echo "浏览器地址栏输入：$localhost:$port 即可访问"
 # }
 
-# 安装phpMyAdmin
+############# 安装phpMyAdmin ############
 install_phpmyadmin()
 {
     # 默认配置
-    filelink="https://files.phpmyadmin.net/phpMyAdmin/4.7.5/phpMyAdmin-4.7.5-all-languages.zip"
+    filelink=$url_phpMyAdmin
     name="phpMyAdmin"
     dirname="phpMyAdmin-*-languages"
     port=82
@@ -637,11 +697,11 @@ install_phpmyadmin()
     echo "phpMyaAdmin的用户、密码就是数据库用户、密码"
 }
 
-# 安装WordPress
+############# 安装WordPress ############
 install_wordpress()
 {
     # 默认配置
-    filelink="https://cn.wordpress.org/wordpress-4.8.1-zh_CN.zip"
+    filelink=$url_WordPress
     name="WordPress"
     dirname="wordpress"
     port=83
@@ -664,11 +724,11 @@ install_wordpress()
     echo "可以用phpMyaAdmin建立数据库，然后在这个站点上一步步配置网站信息"
 }
 
-# 安装h5ai
+############### 安装h5ai ##############
 install_h5ai()
 {
     # 默认配置
-    filelink="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
+    filelink=$url_h5ai
     name="h5ai"
     dirname="_h5ai"
     port=85
@@ -690,11 +750,11 @@ install_h5ai()
     echo "你可以通过修改它来获取更多功能"
 }
 
-# 安装Lychee
+################ 安装Lychee ##############
 install_lychee()
 {
     # 默认配置
-    filelink="https://github.com/electerious/Lychee/archive/master.zip"
+    filelink=$url_Lychee
     name="Lychee"
     dirname="Lychee-master"
     port=86
@@ -715,11 +775,11 @@ install_lychee()
     echo "下面的可以不配置，然后下一步创建个用户就可以用了"
 }
 
-# 安装Owncloud
+################# 安装Owncloud ###############
 install_owncloud()
 {
     # 默认配置
-    filelink="https://download.owncloud.org/community/owncloud-10.0.3.zip"     
+    filelink=$url_Owncloud     
     name="Owncloud"         
     dirname="owncloud"      
     port=98
@@ -741,11 +801,11 @@ install_owncloud()
     echo "安装好之后可以点击左上角三条杠进入market安装丰富的插件，比如在线预览图片、视频等"
 }
 
-# 安装Nextcloud
+################# 安装Nextcloud ##############
 install_nextcloud()
 {
     # 默认配置
-    filelink="https://download.nextcloud.com/server/releases/nextcloud-12.0.3.zip"
+    filelink=$url_Nextcloud
     name="Nextcloud"
     dirname="nextcloud"
     port=99
@@ -766,11 +826,11 @@ install_nextcloud()
     echo "地址默认 localhost 用户、密码你自己设置的或者默认是root 123456"
 }
 
-# 安装kodexplorer芒果云
+############## 安装kodexplorer芒果云 ##########
 install_kodexplorer()
 {
     # 默认配置
-    filelink="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
+    filelink=$url_Kodexplorer
     name="Kodexplorer"
     dirname="kodexplorer"
     port=88
@@ -789,7 +849,7 @@ install_kodexplorer()
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
 }
 
-# 安装Netdata
+############# 安装Netdata ############
 install_netdata()
 {
     echo "1. 安装"
@@ -797,7 +857,7 @@ install_netdata()
     read -p "输入你的选择[1~2]: " input
     case $input in
         1 ) 
-opkg install netdata
+opkg install $url_Netdata
 if [[ `opkg list-installed | grep netdata | wc -l` -eq 0 ]];then
     echo "安装失败"
     exit
@@ -830,6 +890,7 @@ nginx -s reload
 else
     netdataport=19999
 fi
+/opt/etc/init.d/S60netdata restart
 echo "Netdata安装完成"
 echo "浏览器地址栏输入：$localhost:$netdataport 即可访问"
 ;;
@@ -842,7 +903,7 @@ echo "卸载完成"
 esac
 }
 
-# 添加到虚拟主机
+############# 添加到虚拟主机 #############
 add_vhost()
 {
 # 写入文件
@@ -861,7 +922,7 @@ sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
 
-# Swap交换空间
+############## Swap交换空间 ##############
 set_swap()
 {
     clear
@@ -886,7 +947,7 @@ break;;
 esac 
 }
 
-# 开启Swap
+#### 开启Swap ####
 on_swap()
 {
     status=$(cat /proc/swaps |  awk 'NR==2')
@@ -905,7 +966,7 @@ on_swap()
     fi
 }
 
-# 删除Swap文件
+#### 删除Swap ####
 del_swap()
 {
     # 弃用交换分区
@@ -913,7 +974,9 @@ del_swap()
     rm -rf /opt/swapfile
 }
 
-# 脚本开始
+###########################################
+################# 脚本开始 #################
+###########################################
 start()
 {
 # 输出选项
@@ -937,7 +1000,7 @@ case $input in
     1) install_onmp_ipk;;
 2) remove_onmp;;
 3) set_passwd;;
-4) reset_sql;;
+4) init_sql;;
 5) init_onmp;;
 6) install_website;;
 7) set_swap;;
