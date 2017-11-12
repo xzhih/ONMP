@@ -1,4 +1,4 @@
-在LEDE上使用entware
+在LEDE上使用Entware
 ==================
 
 之前给老毛子padavan固件写了[onmp一键包](http://www.right.com.cn/forum/thread-244810-1-1.html)，有不少使用LEDE软路由的小伙伴回帖说不能安装，所以我决定修改脚本进行适配，LEDE的opkg源内似乎没有我需要的包，所以转投使用Entware
