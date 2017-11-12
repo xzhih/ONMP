@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-11-12 23:53:16
+# @Last Modified time: 2017-11-13 01:06:13
 
 # 软件包列表
 pkglist="wget unzip grep sed php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -103,9 +103,6 @@ install_onmp_ipk()
 ################ 初始化onmp ###############
 init_onmp()
 {
-    # 通用环境变量获取
-    get_env
-
     # 初始化网站目录
     rm -rf /opt/wwwroot
     mkdir -p /opt/wwwroot/default
@@ -132,6 +129,7 @@ init_onmp()
 ############### 初始化Nginx ###############
 init_nginx()
 {
+    get_env
     /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
     rm -rf /opt/etc/nginx/vhost 
     rm -rf /opt/etc/nginx/conf
@@ -307,6 +305,7 @@ OOO
 ############## 重置、初始化MySQL #############
 init_sql()
 {
+    get_env
     /opt/etc/init.d/S70mariadbd stop > /dev/null 2>&1
     sleep 10
     rm -rf /opt/mysql
@@ -747,6 +746,7 @@ install_h5ai()
     web_installer
     echo "正在配置$name..."
     cp /opt/wwwroot/$webdir/_h5ai/README.md /opt/wwwroot/$webdir/
+    chmod -R 777 /opt/wwwroot/$webdir/
 
     # 添加到虚拟主机
     add_vhost $port $webdir
@@ -895,15 +895,16 @@ server {
 }
 OOO
 sed -e "s/.*listen.*/    listen $netdataport\;/g" -i /opt/etc/nginx/vhost/netdata.conf
-nginx -s reload
 else
     netdataport=19999
 fi
 /opt/etc/init.d/S60netdata restart
+nginx -s reload
 echo "Netdata安装完成"
 echo "浏览器地址栏输入：$localhost:$netdataport 即可访问"
 ;;
 2)
+killall netdata > /dev/null 2>&1
 opkg remove netdata
 rm -rf /opt/etc/nginx/vhost/netdata.conf
 nginx -s reload
