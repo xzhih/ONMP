@@ -1,3 +1,5 @@
+
+
 在LEDE上使用Entware
 ==================
 
@@ -5,6 +7,17 @@
 
 Eenware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理系统进行管理，现在在官方的源上已经有超过2000个软件包了，可以说是非常的丰富
 官方地址：[Entware-ng](http://entware.net/about/)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**目录**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [U盘格式化（可选）](#u%E7%9B%98%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%8F%AF%E9%80%89)
+- [U盘挂载](#u%E7%9B%98%E6%8C%82%E8%BD%BD)
+- [安装和使用 Entware-ng](#%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-entware-ng)
+- [Tips](#tips)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ### U盘格式化（可选）
 
