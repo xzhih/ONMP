@@ -1,11 +1,9 @@
-
-
 在LEDE上使用Entware
 ==================
 
 之前给老毛子padavan固件写了[onmp一键包](http://www.right.com.cn/forum/thread-244810-1-1.html)，有不少使用LEDE软路由的小伙伴回帖说不能安装，所以我决定修改脚本进行适配，LEDE的opkg源内似乎没有我需要的包，所以转投使用Entware
 
-Eenware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理系统进行管理，现在在官方的源上已经有超过2000个软件包了，可以说是非常的丰富
+Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理系统进行管理，现在在官方的源上已经有超过2000个软件包了，可以说是非常的丰富
 官方地址：[Entware-ng](http://entware.net/about/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
