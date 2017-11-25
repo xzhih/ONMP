@@ -3,7 +3,14 @@ ONMP
 
 适用于安装了Entware固件的onmp一键安装命令
 
-目前已经在Padavan、LEDE上测试成功
+目前已经在Padavan、LEDE、梅林上测试成功
+
+`php-fpm` 和 `mysqld` 启动失败的可以开启swap
+
+```
+onmp open 
+# 选择7
+```
 
 ## 说明
 
@@ -27,7 +34,11 @@ ONMP内置了以下程序的一键安装：
 
 ## 使用说明
 
+[如何格式化U盘](https://github.com/xzhih/ONMP/blob/master/format-partition.md)
+
 [在LEDE上使用Entware](https://github.com/xzhih/ONMP/blob/master/LEDE-entware.md)
+
+[在梅林上使用Entware](https://github.com/xzhih/ONMP/blob/master/Merlin-entware.md)
 
 本脚本使用教程发布在恩山无线论坛
 传送门：[Padavan固件一键安装onmp](http://www.right.com.cn/forum/thread-244810-1-1.html)
