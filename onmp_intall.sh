@@ -2,10 +2,10 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-11-25 20:55:31
+# @Last Modified time: 2017-12-10 22:52:46
 
 # 软件包列表
-pkglist="wget unzip grep sed swap-utils php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="wget unzip grep sed ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
@@ -32,7 +32,7 @@ url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
 # (7) Kodexplorer（可道云aka芒果云在线文档管理器）
 url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
 
-# (8) Netdata（详细得惊人的服务器监控面板
+# (8) Netdata（详细得惊人的服务器监控面板）
 url_Netdata="netdata"
 
 if [[ "mips" = $(uname -m) ]]; then
@@ -106,6 +106,7 @@ init_onmp()
     # 初始化网站目录
     rm -rf /opt/wwwroot
     mkdir -p /opt/wwwroot/default
+    chmod -R 777 /opt/tmp
 
     # 初始化Nginx
     init_nginx > /dev/null 2>&1
@@ -570,6 +571,7 @@ install_website()
     # 通用环境变量获取
     get_env
     clear
+    chmod -R 777 /opt/tmp
 # 选择程序
 cat << AAA
 ----------------------------------------
@@ -585,7 +587,7 @@ cat << AAA
 (8) Netdata（详细得惊人的服务器监控面板）
 (0) 退出
 AAA
-read -p "输入你的选择[0-5]: " input
+read -p "输入你的选择[0-9]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
@@ -596,7 +598,7 @@ case $input in
 7) install_kodexplorer;;
 8) install_netdata;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 6 之间的!"
+*) echo "你输入的不是 0 ~ 9 之间的!"
 break;;
 esac
 }
@@ -661,7 +663,7 @@ fi
 }
 
 # 安装脚本的基本结构
-# install_kodexplorer()
+# install_webapp()
 # {
 #     # 默认配置
 #     filelink=""         # 下载链接
@@ -749,7 +751,6 @@ install_h5ai()
     web_installer
     echo "正在配置$name..."
     cp /opt/wwwroot/$webdir/_h5ai/README.md /opt/wwwroot/$webdir/
-    cp /opt/wwwroot/$webdir/_h5ai/CHANGELOG.md /opt/wwwroot/$webdir/
     chmod -R 777 /opt/wwwroot/$webdir/
 
     # 添加到虚拟主机
