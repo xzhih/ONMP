@@ -2,26 +2,26 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2017-12-10 22:52:46
+# @Last Modified time: 2018-01-08 00:11:27
 
 # 软件包列表
-pkglist="wget unzip grep sed ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.5/phpMyAdmin-4.7.5-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.6/phpMyAdmin-4.7.6-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
-url_WordPress="https://cn.wordpress.org/wordpress-4.8.1-zh_CN.zip"
+url_WordPress="https://cn.wordpress.org/wordpress-4.9.1-zh_CN.zip"
 
 # (3) Owncloud（经典的私有云）
-url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.3.zip"
+url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.4.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-12.0.3.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-12.0.4.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
@@ -30,7 +30,7 @@ url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
 url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
 
 # (7) Kodexplorer（可道云aka芒果云在线文档管理器）
-url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.24.zip"
+url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.25.zip"
 
 # (8) Netdata（详细得惊人的服务器监控面板）
 url_Netdata="netdata"
@@ -38,6 +38,9 @@ url_Netdata="netdata"
 if [[ "mips" = $(uname -m) ]]; then
     url_Netdata="http://pkg.entware.net/binaries/mipsel/archive/netdata_1.6.0-1_mipselsf.ipk"
 fi
+
+# (9) Typecho (流畅的轻量级开源博客程序)
+url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
 
 # 通用环境变量获取
 get_env()
@@ -404,6 +407,7 @@ chmod -R 777 /opt/usr/php/tmp/
 
 sed -e "/^doc_root/d" -i /opt/etc/php.ini
 sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
+sed -e "s/.*output_buffering = .*/output_buffering = 4096/g" -i /opt/etc/php.ini
 sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
 sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
 sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
@@ -585,6 +589,7 @@ cat << AAA
 (6) Lychee（一个很好看，易于使用的Web相册）
 (7) Kodexplorer（可道云aka芒果云在线文档管理器）
 (8) Netdata（详细得惊人的服务器监控面板）
+(9) Typecho (流畅的轻量级开源博客程序)
 (0) 退出
 AAA
 read -p "输入你的选择[0-9]: " input
@@ -597,6 +602,7 @@ case $input in
 6) install_lychee;;
 7) install_kodexplorer;;
 8) install_netdata;;
+9) install_typecho;;
 0) exit;;
 *) echo "你输入的不是 0 ~ 9 之间的!"
 break;;
@@ -635,21 +641,31 @@ esac
 fi
 
     # 下载程序并解压
+    suffix="zip"
+    if [[ -n "$istar" ]]; then
+        suffix="tar"
+    fi
     if [[ ! -d "/opt/wwwroot/$webdir" ]] ; then
         rm -rf /opt/etc/nginx/vhost/$webdir.conf
-        if [[ ! -f /opt/wwwroot/$name.zip ]]; then
-            rm -rf /opt/tmp/$name.zip
-            wget --no-check-certificate -O /opt/tmp/$name.zip $filelink
-            mv /opt/tmp/$name.zip /opt/wwwroot/
+        if [[ ! -f /opt/wwwroot/$name.$suffix ]]; then
+            rm -rf /opt/tmp/$name.$suffix
+            wget --no-check-certificate -O /opt/tmp/$name.$suffix $filelink
+            mv /opt/tmp/$name.* /opt/wwwroot/
         fi
-        if [[ ! -f "/opt/wwwroot/$name.zip" ]]; then
+        if [[ ! -f "/opt/wwwroot/$name.$suffix" ]]; then
             echo "下载未成功"
         else
             echo "正在解压..."
             if [[ -n "$hookdir" ]]; then
                 mkdir /opt/wwwroot/$hookdir
             fi
-            unzip /opt/wwwroot/$name.zip -d /opt/wwwroot/$hookdir > /dev/null 2>&1
+
+            if [[ -n "$istar" ]]; then
+                tar zxf /opt/wwwroot/$name.$suffix -C /opt/wwwroot/$hookdir > /dev/null 2>&1
+            else
+                unzip /opt/wwwroot/$name.$suffix -d /opt/wwwroot/$hookdir > /dev/null 2>&1
+            fi
+            
             mv /opt/wwwroot/$dirname /opt/wwwroot/$webdir
             echo "解压完成..."
         fi
@@ -671,6 +687,7 @@ fi
 #     dirname=""          # 解压后的目录名
 #     port=               # 端口
 #     hookdir=$dirname    # 某些程序解压后不是单个目录，用这个hook解决
+#     istar=false           # 是否为tar压缩包
 
 #     # 运行安装程序 
 #     web_installer
@@ -918,6 +935,30 @@ echo "卸载完成"
 esac
 }
 
+############# 安装Typecho ############
+install_typecho()
+{
+    # 默认配置
+    filelink=$url_Typecho
+    name="Typecho"
+    dirname="build"
+    port=90
+    istar=true
+
+    # 运行安装程序 
+    web_installer
+    echo "正在配置$name..."
+    chmod -R 777 /opt/wwwroot/$webdir 
+
+    # 添加到虚拟主机
+    add_vhost $port $webdir
+    sed -e "s/.*\#php-fpm.*/    include       \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf         # 添加php-fpm支持
+    onmp restart >/dev/null 2>&1
+    echo "$name安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "可以用phpMyaAdmin建立数据库，然后在这个站点上一步步配置网站信息"
+}
+
 ############# 添加到虚拟主机 #############
 add_vhost()
 {
@@ -955,7 +996,7 @@ SWAP
 read -p "输入你的选择[1-3]: " input
 case $input in
     1) on_swap;;
-2) swapoff /opt/swapfile;;
+2) swapoff /opt/.swap;;
 3) del_swap;;
 *) echo "你输入的不是 1 ~ 3 之间的!"
 break;;
@@ -969,14 +1010,14 @@ on_swap()
     if [[ -n "$status" ]]; then
         echo "Swap已启用"
     else
-        if [[ ! -e "/opt/swapfile" ]]; then
+        if [[ ! -e "/opt/.swap" ]]; then
             echo "正在生成swap文件，请耐心等待..."
-            dd if=/dev/zero of=/opt/swapfile bs=1024 count=524288
+            dd if=/dev/zero of=/opt/.swap bs=1024 count=524288
             # 设置交换文件
-            mkswap /opt/swapfile
+            mkswap /opt/.swap
             # 启用交换分区
         fi
-        swapon /opt/swapfile
+        swapon /opt/.swap
         echo "现在你可以使用free命令查看swap是否启用"
     fi
 }
@@ -985,8 +1026,63 @@ on_swap()
 del_swap()
 {
     # 弃用交换分区
-    swapoff /opt/swapfile
-    rm -rf /opt/swapfile
+    swapoff /opt/.swap
+    rm -rf /opt/.swap
+}
+
+############## 数据库自动备份 ##############
+sql_backup()
+{
+# 输出选项
+cat << EOF
+数据库自动备份
+(1) 开启
+(2) 关闭
+(0) 退出
+EOF
+
+read -p "输入你的选择: " input
+case $input in
+    1) sql_backup_on;;
+2) sql_backup_off;;
+0) exit;;
+*) echo "没有这个选项!"
+exit;;
+esac 
+}
+
+### 数据库自动备份开启 ###
+sql_backup_on()
+{
+    if [[ ! -d "/opt/backup" ]]; then
+        mkdir /opt/backup
+    fi
+    read -p "输入你的数据库用户名: " sqlusr
+    read -p "输入你的数据库用户密码: " sqlpasswd
+
+# 删除
+rm -rf /opt/bin/sqlbackup
+
+# 写入文件
+cat > "/opt/bin/sqlbackup" <<-\EOF
+#!/bin/sh
+mysqldump -uusername -puserpasswd -A > /opt/backup/sql_backup_$(date +%Y%m%d%H).sql
+EOF
+    
+sed -e 's/username/'"$sqlusr"'/g' -i /opt/bin/sqlbackup
+sed -e 's/userpasswd/'"$sqlpasswd"'/g' -i /opt/bin/sqlbackup
+
+chmod +x /opt/bin/sqlbackup
+
+echo "命令创建成功，你可以直接使用sqlbackup命令直接备份，也可以在路由器管理页添加定时任务 1 */3 * * * /opt/bin/sqlbackup，意思是每3 小时自动备份一次"
+
+}
+
+### 数据库自动备份关闭 ###
+sql_backup_off()
+{
+    rm -rf /opt/bin/sqlbackup
+    echo "如果你使用了自动定时备份，请删除配置"
 }
 
 ###########################################
@@ -1003,24 +1099,26 @@ cat << EOF
 (2) 卸载ONMP
 (3) 设置数据库密码
 (4) 重置数据库
-(5) 全部重置（会删除网站目录，请注意备份）
-(6) 安装网站程序
-(7) 开启Swap
+(5) 数据库自动备份
+(6) 全部重置（会删除网站目录，请注意备份）
+(7) 安装网站程序
+(8) 开启Swap
 (0) 退出
 
 EOF
 
-read -p "输入你的选择[0-6]: " input
+read -p "输入你的选择[0-8]: " input
 case $input in
     1) install_onmp_ipk;;
 2) remove_onmp;;
 3) set_passwd;;
 4) init_sql;;
-5) init_onmp;;
-6) install_website;;
-7) set_swap;;
+5) sql_backup;;
+6) init_onmp;;
+7) install_website;;
+8) set_swap;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 6 之间的!"
+*) echo "你输入的不是 0 ~ 8 之间的!"
 exit;;
 esac 
 }
