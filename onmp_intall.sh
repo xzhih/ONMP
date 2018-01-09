@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2018-01-08 00:11:27
+# @Last Modified time: 2018-01-09 23:04:35
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -621,7 +621,7 @@ web_installer()
     # 获取用户自定义设置
     read -p "输入服务端口（请避开已使用的端口）[留空默认$port]: " nport
     if [[ $nport ]]; then
-        $port=$nport
+        port=$nport
     fi
     read -p "输入目录名（留空默认：$name）: " webdir
     if [[ ! -n "$webdir" ]]; then
@@ -1066,7 +1066,7 @@ rm -rf /opt/bin/sqlbackup
 # 写入文件
 cat > "/opt/bin/sqlbackup" <<-\EOF
 #!/bin/sh
-mysqldump -uusername -puserpasswd -A > /opt/backup/sql_backup_$(date +%Y%m%d%H).sql
+/opt/bin/mysqldump -uusername -puserpasswd -A > /opt/backup/sql_backup_$(date +%Y%m%d%H).sql
 EOF
     
 sed -e 's/username/'"$sqlusr"'/g' -i /opt/bin/sqlbackup
