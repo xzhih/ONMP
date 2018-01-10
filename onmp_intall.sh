@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2018-01-09 23:04:35
+# @Last Modified time: 2018-01-10 22:26:39
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -59,7 +59,6 @@ get_env()
     if [[ ! -n "$localhost" ]]; then
         localhost="你的路由器IP"
     fi
-
 }
 
 ##### 软件包状态检测 #####
@@ -318,62 +317,37 @@ init_sql()
 # MySQL设置
 cat > "/opt/etc/mysql/my.cnf" <<-\MMM
 [client-server]
-port                            = 3306
-socket                          = /opt/tmp/mysql.sock
+port               = 3306
+socket             = /opt/tmp/mysql.sock
 
 [mysqld]
-user                            = theOne
-pid-file                        = /opt/var/run/mariadb.pid
-basedir                         = /opt
-lc_messages_dir                 = /opt/share/mysql
-lc_messages                     = en_US
-datadir                         = /opt/var/mysql/
-tmpdir                          = /opt/tmp/
+user               = theOne
+pid-file           = /opt/var/run/mariadb.pid
+basedir            = /opt
+lc_messages_dir    = /opt/share/mysql
+lc_messages        = en_US
+datadir            = /opt/var/mysql/
+tmpdir             = /opt/tmp/
 
 skip-external-locking
-bind-address                    = 127.0.0.1
-max_connections                 = 25
-connect_timeout                 = 5
-wait_timeout                    = 600
-key_buffer_size                 = 16M
-max_allowed_packet              = 16M
-table_open_cache                = 64
-sort_buffer_size                = 64K
-read_buffer_size                = 256K
-read_rnd_buffer_size            = 256K
-net_buffer_length               = 2K
-myisam_sort_buffer_size         = 64K
-thread_cache_size               = 8
-thread_stack                    = 128K
-query_cache_limit               = 128K
-query_cache_size                = 2M
-server-id                       = 1
-default-storage-engine          = innodb
-innodb_autoinc_lock_mode        = 2
-innodb_flush_method             = O_DIRECT
-innodb_data_home_dir            = /opt/var/mysql
-innodb_log_group_home_dir       = /opt/var/mysql
-innodb_buffer_pool_size         = 16M
-innodb_additional_mem_pool_size = 2M
-innodb_large_prefix             = ON
-innodb_file_per_table           = ON
-log_warnings                    = 2
-slow_query_log                  = 1
-slow_query_log_file             = /opt/var/log/mariadb-slow.log
-long_query_time                 = 10
-log_slow_rate_limit             = 20
-log_slow_verbosity              = query_plan
+
+bind-address       = 127.0.0.0
+
+key_buffer         = 16M
+max_allowed_packet = 16M
+thread_stack       = 192K
+thread_cache_size  = 8
 
 [mysqldump]
 quick
-max_allowed_packet              = 16M
+quote-names
+max_allowed_packet = 16M
 
 [mysql]
-#no-auto-rehash 
+#no-auto-rehash
 
-[myisamchk]
-key_buffer_size                 = 8M
-sort_buffer_size                = 8M
+[isamchk]
+key_buffer         = 16M
 
 [mysqlhotcopy]
 interactive-timeout
