@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2018-01-10 22:26:39
+# @Last Modified time: 2018-01-18 17:17:27
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -41,6 +41,9 @@ fi
 
 # (9) Typecho (流畅的轻量级开源博客程序)
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
+
+# (10) Z-Blog (体积小，速度快的PHP博客程序)
+url_Zblog="https://update.cdn.zblogcn.com/zip/Z-BlogPHP_1_5_1_1740_Zero.zip"
 
 # 通用环境变量获取
 get_env()
@@ -564,9 +567,10 @@ cat << AAA
 (7) Kodexplorer（可道云aka芒果云在线文档管理器）
 (8) Netdata（详细得惊人的服务器监控面板）
 (9) Typecho (流畅的轻量级开源博客程序)
+(10) Z-Blog (体积小，速度快的PHP博客程序)
 (0) 退出
 AAA
-read -p "输入你的选择[0-9]: " input
+read -p "输入你的选择[0-10]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
@@ -577,8 +581,9 @@ case $input in
 7) install_kodexplorer;;
 8) install_netdata;;
 9) install_typecho;;
+10) install_zblog;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 9 之间的!"
+*) echo "你输入的不是 0 ~ 10 之间的!"
 break;;
 esac
 }
@@ -661,7 +666,7 @@ fi
 #     dirname=""          # 解压后的目录名
 #     port=               # 端口
 #     hookdir=$dirname    # 某些程序解压后不是单个目录，用这个hook解决
-#     istar=false           # 是否为tar压缩包
+#     istar=true          # 是否为tar压缩包, 不是则删除此行
 
 #     # 运行安装程序 
 #     web_installer
@@ -931,6 +936,29 @@ install_typecho()
     echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
     echo "可以用phpMyaAdmin建立数据库，然后在这个站点上一步步配置网站信息"
+}
+
+######## 安装Z-Blog ########
+install_zblog()
+{
+    # 默认配置
+    filelink=$url_Zblog
+    name="Zblog"
+    dirname="Z-BlogPHP_1_5_1_1740_Zero"
+    hookdir=$dirname
+    port=91
+
+    # 运行安装程序 
+    web_installer
+    echo "正在配置$name..."
+    chmod -R 777 /opt/wwwroot/$webdir     # 目录权限看情况使用
+
+    # 添加到虚拟主机
+    add_vhost $port $webdir
+    sed -e "s/.*\#php-fpm.*/    include       \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf         # 添加php-fpm支持
+    onmp restart >/dev/null 2>&1
+    echo "$name安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
 }
 
 ############# 添加到虚拟主机 #############
