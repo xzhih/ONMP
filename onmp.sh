@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   triton2
-# @Last Modified time: 2018-01-22 16:18:27
+# @Last Modified time: 2018-03-15 17:10:06
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -12,16 +12,16 @@ pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fas
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.6/phpMyAdmin-4.7.6-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.9/phpMyAdmin-4.7.9-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
-url_WordPress="https://cn.wordpress.org/wordpress-4.9.1-zh_CN.zip"
+url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 
 # (3) Owncloud（经典的私有云）
-url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.4.zip"
+url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.7.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-12.0.4.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.0.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
@@ -123,7 +123,7 @@ init_onmp()
     init_php > /dev/null 2>&1
 
     # 添加探针
-    cp /opt/ONMP-master/default /opt/wwwroot/ -R
+    cp /opt/onmp/tz.php /opt/wwwroot/default -R
     add_vhost 81 default
     sed -e "s/.*\#php-fpm.*/    include     \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/default.conf
 
@@ -505,7 +505,7 @@ onmp_restart()
 
 case $1 in
     open ) 
-    /opt/ONMP-master/onmp_intall.sh
+    /opt/onmp/onmp.sh
     ;;
 
     start )
