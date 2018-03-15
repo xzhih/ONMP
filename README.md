@@ -57,7 +57,7 @@ Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理
 一键命令，复制->粘贴->回车
 
 ```
- sh -c "$(curl -lsSl https://raw.githubusercontent.com/xzhih/ONMP/master/onclick.sh)"
+ sh -c "$(curl -lsSl https://raw.githubusercontent.com/xzhih/ONMP/master/oneclick.sh)"
 ```
 
 一长串的复制如果出错，可以按照以下给出的命令，一步步进行安装
