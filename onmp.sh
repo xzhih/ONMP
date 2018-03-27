@@ -1,11 +1,11 @@
 #!/bin/sh
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   triton2
-# @Last Modified time: 2018-03-15 17:10:06
+# @Last Modified by:   xzhih
+# @Last Modified time: 2018-03-27 20:35:05
 
 # 软件包列表
-pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
@@ -57,8 +57,8 @@ get_env()
         username=$(cat /etc/passwd | sed "s/:/ /g" | awk 'NR==1'  | awk '{printf $1}')
     fi
 
-    # 获取网关
-    # localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+    # 获取路由器IP
+    localhost=$(ifconfig  | grep "inet addr" | awk '{ print $2}' | awk -F: '{print $2}' | awk 'NR==1')
     if [[ ! -n "$localhost" ]]; then
         localhost="你的路由器IP"
     fi
@@ -394,7 +394,7 @@ sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
 sed -e "s/.*output_buffering = .*/output_buffering = 4096/g" -i /opt/etc/php.ini
 sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
 sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
-sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 2000M/g" -i /opt/etc/php.ini
+sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 8000M/g" -i /opt/etc/php.ini
 sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
 # PHP配置文件
@@ -406,7 +406,8 @@ opcache.interned_strings_buffer=8
 opcache.max_accelerated_files=10000
 opcache.memory_consumption=128
 opcache.save_comments=1
-opcache.revalidate_freq=1
+opcache.revalidate_freq=60
+opcache.fast_shutdown=1
 PHPINI
 
 cat >> "/opt/etc/php7-fpm.d/www.conf" <<-\PHPFPM
@@ -456,7 +457,7 @@ cat > "/opt/bin/onmp" <<-\EOF
 #!/bin/sh
 
 # 获取路由器IP
-# localhost=$(grep `hostname` /etc/hosts | awk '{print $1}')
+localhost=$(ifconfig | grep "inet addr" | awk '{ print $2}' | awk -F: '{print $2}' | awk 'NR==1')
 if [[ ! -n "$localhost" ]]; then
     localhost="你的路由器IP"
 fi
@@ -988,6 +989,28 @@ sed -e "s/.*listen.*/    listen $1\;/g" -i /opt/etc/nginx/vhost/$2.conf
 sed -e "s/.*\/opt\/wwwroot\/www\/.*/    root  \/opt\/wwwroot\/$2\/\;/g" -i /opt/etc/nginx/vhost/$2.conf
 }
 
+############## 网站管理 ##############
+web_manager()
+{
+    onmp stop > /dev/null 2>&1
+    i=1
+    for conf in /opt/etc/nginx/vhost/*;
+    do
+        path=$(cat $conf | awk 'NR==4' | awk '{print $2}' | sed 's/;//')
+        echo "$i. $path"
+        eval web_conf$i="$conf"
+        eval web_file$i="$path"
+        i=$((i + 1))
+    done
+    read -p "请选择要删除的网站：" webnum
+    eval conf=\$web_conf"$webnum"
+    eval file=\$web_file"$webnum"
+    rm -rf "$conf"
+    rm -rf "$file"
+    onmp start > /dev/null 2>&1
+    echo "网站已删除"
+}
+
 ############## Swap交换空间 ##############
 set_swap()
 {
@@ -1112,12 +1135,13 @@ cat << EOF
 (5) 数据库自动备份
 (6) 全部重置（会删除网站目录，请注意备份）
 (7) 安装网站程序
-(8) 开启Swap
+(8) 网站管理
+(9) 开启Swap
 (0) 退出
 
 EOF
 
-read -p "输入你的选择[0-8]: " input
+read -p "输入你的选择[0-9]: " input
 case $input in
     1) install_onmp_ipk;;
 2) remove_onmp;;
@@ -1126,7 +1150,8 @@ case $input in
 5) sql_backup;;
 6) init_onmp;;
 7) install_website;;
-8) set_swap;;
+8) web_manager;;
+9) set_swap;;
 0) exit;;
 *) echo "你输入的不是 0 ~ 8 之间的!"
 exit;;
