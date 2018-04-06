@@ -3,7 +3,7 @@
 # @Author: xzhih
 # @Date:   2018-03-19 04:44:09
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-03-27 18:08:16
+# @Last Modified time: 2018-04-06 18:07:44
 
 cat << EOF
 ----------------------------------------
@@ -29,6 +29,7 @@ install()
 
     # 获取onmp脚本
     curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
+    # curl -kfsSL http://localhost/onmp.sh > /opt/onmp/onmp.sh
     chmod +x /opt/onmp/onmp.sh
 
     # 获取php探针文件

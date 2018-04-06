@@ -76,32 +76,32 @@ exit 0
 
 - armv5
 
-```bash
-wget -O - http://pkg.entware.net/binaries/armv5/installer/entware_install.sh | /bin/sh
+```shell
+$ wget -O - http://bin.entware.net/armv5sf-k3.2/installer/generic.sh | /bin/sh
 ```
 
 - armv7
 
-```bash
-wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | /bin/sh
+```shell
+$ wget -O - http://bin.entware.net/armv7sf-k3.2/installer/generic.sh | /bin/sh
 ```
 
-- x86-32
+- armv8 (aarch64)
 
-```bash
-wget -O - http://pkg.entware.net/binaries/x86-32/installer/entware_install.sh | /bin/sh
+```shell
+$ wget -O - http://bin.entware.net/aarch64-k3.10/installer/generic.sh | /bin/sh
 ```
 
 - x86-64
 
-```bash
-wget -O - http://pkg.entware.net/binaries/x86-64/installer/entware_install.sh | /bin/sh
+```shell
+$ wget -O - http://bin.entware.net/x64-k3.2/installer/generic.sh | /bin/sh
 ```
 
 - MIPS
 
-```bash
-wget -O - http://pkg.entware.net/binaries/mipsel/installer/installer.sh | /bin/sh
+```shell
+$ wget -O - http://bin.entware.net/mipselsf-k3.4/installer/generic.sh | /bin/sh
 ```
 
 在输入命令之后之后会自己跑起来，出现以下结果就代表成功，没成功的记得把U盘上的opt文件夹清空再来

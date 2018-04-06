@@ -2,10 +2,13 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-03-27 20:35:05
+# @Last Modified time: 2018-04-06 18:16:44
 
 # 软件包列表
-pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring  php7-mod-mcrypt  php7-mod-mysqli php7-mod-opcache php7-mod-openssl php7-mod-pdo php7-mod-pcntl php7-mod-pdo-mysql php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils nginx-extras zoneinfo-core zoneinfo-asia libmariadb mariadb-server mariadb-client mariadb-client-extra"
+pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
+
+phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
+
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
@@ -21,7 +24,7 @@ url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.7.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.0.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.1.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
@@ -34,10 +37,6 @@ url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.25.zip"
 
 # (8) Netdata（详细得惊人的服务器监控面板）
 url_Netdata="netdata"
-
-if [[ "mips" = $(uname -m) ]]; then
-    url_Netdata="http://pkg.entware.net/binaries/mipsel/archive/netdata_1.6.0-1_mipselsf.ipk"
-fi
 
 # (9) Typecho (流畅的轻量级开源博客程序)
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
@@ -79,6 +78,21 @@ install_check()
     done
 }
 
+# 安装PHP mod 
+install_php_mod()
+{
+    notinstall=""
+    for data in $phpmod ; do
+        if [[ `opkg list-installed | grep $data | wc -l` -ne 0 ]];then
+            echo "$data 已安装"
+        else
+            notinstall="$notinstall $data"
+            echo "$data 正在安装..."
+            opkg install $data
+        fi
+    done
+}
+
 ############## 安装软件包 #############
 install_onmp_ipk()
 {
@@ -94,11 +108,20 @@ install_onmp_ipk()
     done
 
     if [[ ${#notinstall} -gt 0 ]]; then
-        echo "可能会因为网络问题某些软件包无法安装，请挂全局VPN再次运行命令"
+        echo "可能会因为某些问题某些核心软件包无法安装，请保持/opt/目录足够干净，如果是网络问题，请挂全局VPN再次运行命令"
     else
         echo "----------------------------------------"
         echo "|********** ONMP软件包已完整安装 *********|"
         echo "----------------------------------------"
+        echo "是否安装自动PHP的模块，你也可以手动安装"
+#
+read -p "输入你的选择[y/n]: " input
+case $input in
+    y) install_php_mod;;
+n) echo "如果程序提示需要安装插件，你可以自行使用opkg命令安装";;
+*) echo "你输入的不是 y/n"
+exit;;
+esac 
         echo "现在开始初始化ONMP"
         init_onmp
         echo ""
@@ -727,9 +750,6 @@ install_wordpress()
     web_installer
     echo "正在配置$name..."
     chmod -R 777 /opt/wwwroot/$webdir
-    echo "define("FS_METHOD","direct");" >> /opt/wwwroot/$webdir/wp-config-sample.php
-    echo "define("FS_CHMOD_DIR", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
-    echo "define("FS_CHMOD_FILE", 0777);" >> /opt/wwwroot/$webdir/wp-config-sample.php
 
     # 添加到虚拟主机
     add_vhost $port $webdir
