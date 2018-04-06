@@ -27,27 +27,27 @@ Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理
 分区、格式都没问题之后，开始挂载
 
 ```bash
-~ mkdir /mnt/onmp
+$ mkdir /mnt/onmp
 # 挂载方法1
-~ mount -t ext4 /dev/sda1 /mnt/onmp/
+$ mount -t ext4 /dev/sda1 /mnt/onmp/
 # 这样就挂载上了
-~ df -h
+$ df -h
 Filesystem                Size      Used Available Use% Mounted on
 /dev/sda1               975.5M      2.5M    906.6M   0% /mnt/onmp
 # 可以看到已经挂载
 
 # 挂载方法2（推荐）
-~ vi /etc/fstab # 按一下i编辑文件
+$ vi /etc/fstab # 按一下i编辑文件
 # <file system> <mount point> <type> <options> <dump> <pass>
 /dev/sda1 /mnt/onmp ext4 defaults 0 1 # 添加这一行
 # 按一下Esc再输入冒号`:`，输入wq回车保存
-~ mount -a # 以后每次要挂载就直接输入这个命令
+$ mount -a # 以后每次要挂载就直接输入这个命令
 ```
 
 开机自动挂载
 
 ```bash
-~ vi /etc/rc.local # 编辑，vim基本用法和上面一样
+$ vi /etc/rc.local # 编辑，vim基本用法和上面一样
 mount -a # 在exit 0之前添加命令，开机后自动执行挂载
 exit 0
 ```
@@ -59,14 +59,14 @@ exit 0
 在U盘上创建一个空的opt文件夹
 
 ```bash
-~ mkdir /mnt/onmp/opt
+$ mkdir /mnt/onmp/opt
 ```
 
 在系统根目录创建opt文件夹，并绑定U盘的opt文件夹
 
 ```bash
-~ mkdir /opt
-~ mount -o bind /mnt/onmp/opt /opt
+$ mkdir /opt
+$ mount -o bind /mnt/onmp/opt /opt
 # 可以用 mount 或 df -h 命令查看是否挂载成功
 ```
 
@@ -137,16 +137,16 @@ mount -o bind /mnt/onmp/opt /opt
 
 ```bash
 # 检查环境变量
-~ echo $PATH
+$ echo $PATH
 /opt/bin:/opt/sbin:/usr/sbin:/usr/bin:/sbin:/bin # 可以看到已经有/opt的路径了
 
 # 检查 `/opt` 挂载情况
-~ df -h
+$ df -h
 /dev/sda1               975.5M     13.9M    895.2M   2% /mnt/onmp # U盘挂载成功
 /dev/sda1               975.5M     13.9M    895.2M   2% /opt # opt挂载成功
 
 # opkg 更新数据
-~ opkg update
+$ opkg update
 Downloading http://pkg.entware.net/binaries/x86-64/Packages.gz # 默认从entware下载
 Updated list of available packages in /opt/var/opkg-lists/packages # 成功
 ```

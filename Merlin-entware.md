@@ -26,10 +26,10 @@ Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理
 分区、格式都没问题之后，开始挂载
 
 ```bash
-~ mkdir /mnt/sda1
-~ mount -t ext4 /dev/sda1 /mnt/sda1/
+$ mkdir /mnt/sda1
+$ mount -t ext4 /dev/sda1 /mnt/sda1/
 # 这样就挂载上了
-~ df -h
+$ df -h
 Filesystem                Size      Used Available Use% Mounted on
 /dev/sda1               975.5M      2.5M    906.6M   0% /tmp/mnt/sda1
 # 可以看到已经挂载
@@ -40,7 +40,7 @@ Filesystem                Size      Used Available Use% Mounted on
 梅林内置了一个安装命令很方便
 
 ```bash
-~ entware-setup.sh
+$ entware-setup.sh
 
 # 然后会提示你选择哪个分区，就选择刚才挂载的那个
 ···省略

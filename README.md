@@ -8,7 +8,7 @@ ONMP
 `php-fpm` 和 `mysqld` 启动失败的可以开启swap
 
 ```
-onmp open 
+$ onmp open 
 # 选择7
 ```
 
@@ -58,7 +58,7 @@ Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理
 一键命令，复制->粘贴->回车
 
 ```
- sh -c "$(curl -kfsSl https://raw.githubusercontent.com/xzhih/ONMP/master/oneclick.sh)"
+ $ sh -c "$(curl -kfsSl https://raw.githubusercontent.com/xzhih/ONMP/master/oneclick.sh)"
 ```
 
 一长串的复制如果出错，可以按照以下给出的命令，一步步进行安装
