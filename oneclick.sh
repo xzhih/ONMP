@@ -3,7 +3,7 @@
 # @Author: xzhih
 # @Date:   2018-03-19 04:44:09
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-04-06 18:07:44
+# @Last Modified time: 2018-04-17 20:23:56
 
 cat << EOF
 ----------------------------------------
@@ -21,11 +21,10 @@ QQ交流群：346477750
 
 EOF
 
-install()
+Install()
 {
-
-    rm -rf /opt/bin/onmp /opt/onmp
-    mkdir -p /opt/onmp
+	rm -rf /opt/bin/onmp /opt/onmp
+	mkdir -p /opt/onmp
 
     # 获取onmp脚本
     curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
@@ -36,7 +35,31 @@ install()
     curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/tz.php > /opt/onmp/tz.php
 
     /opt/onmp/onmp.sh
+}
+
+Updata()
+{
+	rm -rf /opt/onmp/onmp.sh
+	curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
+	chmod +x /opt/onmp/onmp.sh
+	echo "升级完成"
+}
+
+start()
+{
+#
+cat << EOF
+(1) 开始安装
+(2) 升级脚本
+EOF
+
+read -p "请输入：" input
+case $input in
+	1 ) Install;;
+2) Updata;;
+*) exit;;
+esac
 
 }
 
-install
+start

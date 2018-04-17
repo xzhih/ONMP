@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-04-06 18:16:44
+# @Last Modified time: 2018-04-17 20:13:36
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -15,7 +15,7 @@ phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exi
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.7.9/phpMyAdmin-4.7.9-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.0/phpMyAdmin-4.8.0-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
 url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
@@ -42,7 +42,10 @@ url_Netdata="netdata"
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
 
 # (10) Z-Blog (体积小，速度快的PHP博客程序)
-url_Zblog="https://update.cdn.zblogcn.com/zip/Z-BlogPHP_1_5_1_1740_Zero.zip"
+url_Zblog="https://update.cdn.zblogcn.com/zip/Z-BlogPHP_1_5_2_1910_Zero.zip"
+
+# (11) DzzOffice (开源办公平台)
+url_DzzOffice="https://github.com/zyx0814/dzzoffice/archive/2.0beta.zip"
 
 # 通用环境变量获取
 get_env()
@@ -599,9 +602,10 @@ cat << AAA
 (8) Netdata（详细得惊人的服务器监控面板）
 (9) Typecho (流畅的轻量级开源博客程序)
 (10) Z-Blog (体积小，速度快的PHP博客程序)
+(11) DzzOffice (开源办公平台)
 (0) 退出
 AAA
-read -p "输入你的选择[0-10]: " input
+read -p "输入你的选择[0-11]: " input
 case $input in
     1) install_phpmyadmin;;
 2) install_wordpress;;
@@ -613,8 +617,9 @@ case $input in
 8) install_netdata;;
 9) install_typecho;;
 10) install_zblog;;
+11) install_dzzoffice;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 10 之间的!"
+*) echo "你输入的不是 0 ~ 11 之间的!"
 break;;
 esac
 }
@@ -988,6 +993,29 @@ install_zblog()
     onmp restart >/dev/null 2>&1
     echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
+}
+
+######### 安装DzzOffice #########
+install_dzzoffice()
+{
+    # 默认配置
+    filelink=$url_DzzOffice
+    name="DzzOffice"
+    dirname="dzzoffice-2.0beta"
+    port=92
+
+    # 运行安装程序 
+    web_installer
+    echo "正在配置$name..."
+    chmod -R 777 /opt/wwwroot/$webdir     # 目录权限看情况使用
+
+    # 添加到虚拟主机
+    add_vhost $port $webdir
+    sed -e "s/.*\#php-fpm.*/    include       \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/$webdir.conf         # 添加php-fpm支持
+    onmp restart >/dev/null 2>&1
+    echo "$name安装完成"
+    echo "浏览器地址栏输入：$localhost:$port 即可访问"
+    echo "DzzOffice应用市场中，某些应用无法自动安装的，请自行参看官网给的手动安装教程"
 }
 
 ############# 添加到虚拟主机 #############
