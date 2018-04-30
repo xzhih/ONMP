@@ -3,7 +3,7 @@
 # @Author: xzhih
 # @Date:   2018-03-19 04:44:09
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-04-17 20:23:56
+# @Last Modified time: 2018-05-01 04:21:07
 
 cat << EOF
 ----------------------------------------
@@ -27,8 +27,8 @@ Install()
 	mkdir -p /opt/onmp
 
     # 获取onmp脚本
-    curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
-    # curl -kfsSL http://localhost/onmp.sh > /opt/onmp/onmp.sh
+    # curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
+    curl -kfsSL http://192.168.4.237:4000/onmp.sh > /opt/onmp/onmp.sh
     chmod +x /opt/onmp/onmp.sh
 
     # 获取php探针文件
@@ -40,8 +40,10 @@ Install()
 Updata()
 {
 	rm -rf /opt/onmp/onmp.sh
-	curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
+	# curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/onmp.sh > /opt/onmp/onmp.sh
+	curl -kfsSL http://192.168.4.237:4000/onmp.sh > /opt/onmp/onmp.sh
 	chmod +x /opt/onmp/onmp.sh
+	/opt/onmp/onmp.sh renewsh > /dev/null 2>&1
 	echo "升级完成"
 }
 

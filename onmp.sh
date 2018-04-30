@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-04-17 20:13:36
+# @Last Modified time: 2018-05-01 04:20:53
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -15,16 +15,16 @@ phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exi
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.0/phpMyAdmin-4.8.0-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.0.1/phpMyAdmin-4.8.0.1-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
 url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 
 # (3) Owncloud（经典的私有云）
-url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.7.zip"
+url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.8.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.1.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.2.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
@@ -42,10 +42,10 @@ url_Netdata="netdata"
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
 
 # (10) Z-Blog (体积小，速度快的PHP博客程序)
-url_Zblog="https://update.cdn.zblogcn.com/zip/Z-BlogPHP_1_5_2_1910_Zero.zip"
+url_Zblog="https://update.zblogcn.com/zip/Z-BlogPHP_1_5_2_1930_Zero.zip"
 
 # (11) DzzOffice (开源办公平台)
-url_DzzOffice="https://github.com/zyx0814/dzzoffice/archive/2.0beta.zip"
+url_DzzOffice="https://codeload.github.com/zyx0814/dzzoffice/zip/master"
 
 # 通用环境变量获取
 get_env()
@@ -505,21 +505,30 @@ vhost_list()
 onmp_restart()
 {
     killall -9 nginx mysqld php-fpm > /dev/null 2>&1
-    sleep 2
+    sleep 3
     /opt/etc/init.d/S70mariadbd start > /dev/null 2>&1
     /opt/etc/init.d/S79php7-fpm start > /dev/null 2>&1
     /opt/etc/init.d/S80nginx start > /dev/null 2>&1
     sleep 3
-    onmplist="nginx php-fpm mysqld"
     num=0
-    for i in $onmplist; do
-        if [ `ps | grep $i |wc -l` -eq 1 ];then
-            echo "$i 启动失败"
-            num=`expr $num + 1`
-        else
-            echo "$i 启动成功"
-        fi
-    done
+    if [ ! -f "/opt/var/run/nginx.pid" ] ;then
+        echo "Nginx 启动失败"
+        num=`expr $num + 1`
+    else
+        echo "Nginx 启动成功"
+    fi
+    if [ ! -f "/opt/var/run/php7-fpm.pid" ] ;then
+        echo "PHP-FPM 启动失败"
+        num=`expr $num + 1`
+    else
+        echo "PHP-FPM 启动成功"
+    fi
+    if [ ! -f "/opt/var/run/mysqld.pid" ] ;then
+        echo "MySQL 启动失败"
+        num=`expr $num + 1`
+    else
+        echo "MySQL 启动成功"
+    fi
     if [[ $num -gt 0 ]]; then
         echo "onmp启动失败"
         logger -t "【ONMP】" "启动失败"
@@ -544,7 +553,9 @@ case $1 in
     stop )
     echo "onmp正在停止"
     logger -t "【ONMP】" "正在停止"
-    killall -9 nginx mysqld php-fpm
+    /opt/etc/init.d/S70mariadbd stop > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
     echo "onmp已停止"
     logger -t "【ONMP】" "已停止"
     ;;
@@ -1001,7 +1012,7 @@ install_dzzoffice()
     # 默认配置
     filelink=$url_DzzOffice
     name="DzzOffice"
-    dirname="dzzoffice-2.0beta"
+    dirname="dzzoffice-master"
     port=92
 
     # 运行安装程序 
@@ -1205,5 +1216,10 @@ case $input in
 exit;;
 esac 
 }
+
+if [ $1 == 'renewsh' ]; then
+    set_onmp_sh
+    exit;
+fi 
 
 start
