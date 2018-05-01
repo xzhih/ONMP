@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-05-01 04:20:53
+# @Last Modified time: 2018-05-01 17:37:48
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -459,8 +459,11 @@ set_passwd()
 remove_onmp()
 {
     killall -9 nginx mysqld php-fpm
-    for data in $pkglist; do
-        opkg remove $data --force-depends
+    for pkg in $pkglist; do
+        opkg remove $pkg --force-depends
+    done
+    for mod in $phpmod; do
+        opkg remove $mod --force-depends
     done
     rm -rf /opt/wwwroot
     rm -rf /opt/etc/nginx/vhost
