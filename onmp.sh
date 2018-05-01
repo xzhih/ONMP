@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-05-01 17:37:48
+# @Last Modified time: 2018-05-01 18:41:15
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -1220,9 +1220,11 @@ exit;;
 esac 
 }
 
-if [ $1 == 'renewsh' ]; then
+re_sh="renewsh"
+
+if [ "$1" == "$re_sh" ]; then
     set_onmp_sh
     exit;
-fi 
+fi  
 
 start
