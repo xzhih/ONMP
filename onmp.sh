@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-05-01 18:41:15
+# @Last Modified time: 2018-05-03 23:18:30
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras libmariadb mariadb-server mariadb-client mariadb-client-extra"
@@ -35,16 +35,13 @@ url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
 # (7) Kodexplorer（可道云aka芒果云在线文档管理器）
 url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.25.zip"
 
-# (8) Netdata（详细得惊人的服务器监控面板）
-url_Netdata="netdata"
-
-# (9) Typecho (流畅的轻量级开源博客程序)
+# (8) Typecho (流畅的轻量级开源博客程序)
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
 
-# (10) Z-Blog (体积小，速度快的PHP博客程序)
+# (9) Z-Blog (体积小，速度快的PHP博客程序)
 url_Zblog="https://update.zblogcn.com/zip/Z-BlogPHP_1_5_2_1930_Zero.zip"
 
-# (11) DzzOffice (开源办公平台)
+# (10) DzzOffice (开源办公平台)
 url_DzzOffice="https://codeload.github.com/zyx0814/dzzoffice/zip/master"
 
 # 通用环境变量获取
@@ -613,10 +610,9 @@ cat << AAA
 (5) h5ai（优秀的文件目录）
 (6) Lychee（一个很好看，易于使用的Web相册）
 (7) Kodexplorer（可道云aka芒果云在线文档管理器）
-(8) Netdata（详细得惊人的服务器监控面板）
-(9) Typecho (流畅的轻量级开源博客程序)
-(10) Z-Blog (体积小，速度快的PHP博客程序)
-(11) DzzOffice (开源办公平台)
+(8) Typecho (流畅的轻量级开源博客程序)
+(9) Z-Blog (体积小，速度快的PHP博客程序)
+(10) DzzOffice (开源办公平台)
 (0) 退出
 AAA
 read -p "输入你的选择[0-11]: " input
@@ -628,12 +624,11 @@ case $input in
 5) install_h5ai;;
 6) install_lychee;;
 7) install_kodexplorer;;
-8) install_netdata;;
-9) install_typecho;;
-10) install_zblog;;
-11) install_dzzoffice;;
+8) install_typecho;;
+9) install_zblog;;
+10) install_dzzoffice;;
 0) exit;;
-*) echo "你输入的不是 0 ~ 11 之间的!"
+*) echo "你输入的不是 0 ~ 10 之间的!"
 break;;
 esac
 }
@@ -904,61 +899,6 @@ install_kodexplorer()
     onmp restart >/dev/null 2>&1
     echo "$name安装完成"
     echo "浏览器地址栏输入：$localhost:$port 即可访问"
-}
-
-############# 安装Netdata ############
-install_netdata()
-{
-    echo "1. 安装"
-    echo "2. 卸载"
-    read -p "输入你的选择[1~2]: " input
-    case $input in
-        1 ) 
-opkg install $url_Netdata
-if [[ `opkg list-installed | grep netdata | wc -l` -eq 0 ]];then
-    echo "安装失败"
-    exit
-fi
-read -p "请输入端口(默认19999): " netdataport
-if [[ $netdataport ]]; then
-# 
-cat > "/opt/etc/nginx/vhost/netdata.conf" <<-\OOO
-upstream backend {
-    server 127.0.0.1:19999;
-    keepalive 64;
-}
-server {
-    listen 80;
-    server_name localhost;
-    location / {
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_pass http://backend;
-        proxy_http_version 1.1;
-        proxy_pass_request_headers on;
-        proxy_set_header Connection "keep-alive";
-        proxy_store off;
-    }
-}
-OOO
-sed -e "s/.*listen.*/    listen $netdataport\;/g" -i /opt/etc/nginx/vhost/netdata.conf
-else
-    netdataport=19999
-fi
-/opt/etc/init.d/S60netdata restart
-nginx -s reload
-echo "Netdata安装完成"
-echo "浏览器地址栏输入：$localhost:$netdataport 即可访问"
-;;
-2)
-killall netdata > /dev/null 2>&1
-opkg remove netdata
-rm -rf /opt/etc/nginx/vhost/netdata.conf
-nginx -s reload
-echo "卸载完成"
-;;
-esac
 }
 
 ############# 安装Typecho ############
