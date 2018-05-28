@@ -66,13 +66,21 @@ Entware-ng 是一个适用于嵌入式系统的软件包库，使用 opkg 包管
 一长串的复制如果出错，可以按照以下给出的命令，一步步进行安装
 
 ```
- cd /opt && opkg install wget unzip # 进入 entware 挂载目录
+# 进入 entware 挂载目录
+ cd /opt && opkg install wget unzip 
+
 # 下载软件包
 wget --no-check-certificate -O /opt/onmp.zip https://github.com/xzhih/ONMP/archive/master.zip 
-unzip /opt/onmp.zip # 解压
+
+# 解压
+unzip /opt/onmp.zip 
 cd /opt/ONMP-master 
+
+# 设置权限
 chmod +x ./onmp.sh 
-./onmp.sh # 运行
+
+# 运行
+./onmp.sh 
 ```
 
 要是正常运行到脚本，会出现下面的情景，选1安装即可
