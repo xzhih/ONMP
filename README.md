@@ -32,26 +32,28 @@ ONMP内置了以下程序的一键安装：
 (10) DzzOffice (开源办公平台)
 ```
 
-所有的软件包均通过opkg安装，一切配置均在脚本中可见，请放心使用
+所有的软件包均通过 opkg 安装，一切配置均在脚本中可见，请放心使用
 
 ## 使用说明
 
-[如何格式化U盘](https://github.com/xzhih/ONMP/blob/master/format-partition.md)
+[如何在路由器上格式化 U 盘、硬盘](https://zhih.me/format-Upan-partition/)
 
-本脚本使用教程发布在恩山无线论坛
-传送门：[Padavan固件一键安装onmp](http://www.right.com.cn/forum/thread-244810-1-1.html)
+本脚本其他使用教程发布在恩山无线论坛
+传送门：[Padavan 固件一键安装 onmp](http://www.right.com.cn/forum/thread-244810-1-1.html)
 
 ## 安装教程
 
 ### 1. 安装 Entware
 
-Entware-ng是一个适用于嵌入式系统的软件包库，使用opkg包管理系统进行管理，现在在官方的源上已经有超过2000个软件包了，可以说是非常的丰富
+Entware-ng 是一个适用于嵌入式系统的软件包库，使用 opkg 包管理系统进行管理，现在在官方的源上已经有超过 2000 个软件包了，可以说是非常的丰富
 
 不同的固件，安装方式都不一样，请认准安装方式（自己是什么固件总该懂得吧😂）
 
-[在LEDE上使用Entware](https://github.com/xzhih/ONMP/blob/master/LEDE-entware.md)
+[在 LEDE 上使用 Entware](https://zhih.me/LEDE-entware/)
 
-[在梅林上使用Entware](https://github.com/xzhih/ONMP/blob/master/Merlin-entware.md)
+[在梅林上使用 Entware](https://zhih.me/Merlin-entware/)
+
+[在 Padavan 上使用 entware](https://zhih.me/Padavan-entware/)
 
 ### 2. 安装onmp
 
