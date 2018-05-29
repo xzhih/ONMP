@@ -2,7 +2,7 @@
 ## @Author: triton
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-05-28 13:24:49
+# @Last Modified time: 2018-05-29 18:17:01
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server-extra mariadb-client-extra"
@@ -346,6 +346,7 @@ init_sql()
     sleep 10
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
+    mkdir -p /opt/etc/mysql/
 
 # MySQL设置
 cat > "/opt/etc/mysql/my.cnf" <<-\MMM
@@ -367,7 +368,7 @@ skip-external-locking
 
 bind-address       = 127.0.0.0
 
-key_buffer         = 24M
+key_buffer_size    = 24M
 max_allowed_packet = 24M
 thread_stack       = 192K
 thread_cache_size  = 8
@@ -381,13 +382,15 @@ max_allowed_packet = 24M
 #no-auto-rehash
 
 [isamchk]
-key_buffer         = 24M
+key_buffer_size    = 24M
 
 [mysqlhotcopy]
 interactive-timeout
 MMM
 
 sed -e "s/theOne/$username/g" -i /opt/etc/mysql/my.cnf
+
+chmod 644 /opt/etc/mysql/my.cnf
 
 mkdir -p /opt/var/mysql
 
