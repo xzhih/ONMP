@@ -36,10 +36,9 @@ ONMP内置了以下程序的一键安装：
 
 ## 使用说明
 
-[如何在路由器上格式化 U 盘、硬盘](https://zhih.me/format-Upan-partition/)
+[wiki](https://github.com/xzhih/ONMP/wiki)
 
-本脚本其他使用教程发布在恩山无线论坛
-传送门：[Padavan 固件一键安装 onmp](http://www.right.com.cn/forum/thread-244810-1-1.html)
+[底噪博客](https://zhih.me)
 
 ## 安装教程
 
@@ -49,11 +48,11 @@ Entware-ng 是一个适用于嵌入式系统的软件包库，使用 opkg 包管
 
 不同的固件，安装方式都不一样，请认准安装方式（自己是什么固件总该懂得吧😂）
 
-[在 LEDE 上使用 Entware](https://zhih.me/LEDE-entware/)
+[在 LEDE 上使用 Entware](https://github.com/xzhih/ONMP/wiki/在-LEDE-上安装-Entware)
 
-[在梅林上使用 Entware](https://zhih.me/Merlin-entware/)
+[在梅林上使用 Entware](https://github.com/xzhih/ONMP/wiki/在梅林上安装-Entware)
 
-[在 Padavan 上使用 entware](https://zhih.me/Padavan-entware/)
+[在 Padavan 上使用 entware](https://github.com/xzhih/ONMP/wiki/在-Padavan-上安装-Entware)
 
 ### 2. 安装onmp
 
