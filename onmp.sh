@@ -1,11 +1,11 @@
 #!/bin/sh
-## @Author: triton
+# @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-05-29 18:17:01
+# @Last Modified time: 2018-06-04 17:26:52
 
 # 软件包列表
-pkglist="wget unzip grep sed tar ca-certificates php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server-extra mariadb-client-extra"
+pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server-extra mariadb-client-extra"
 
 phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
 
@@ -15,7 +15,7 @@ phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exi
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.0.1/phpMyAdmin-4.8.0.1-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.1/phpMyAdmin-4.8.1-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
 url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
@@ -39,7 +39,7 @@ url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.25.zip"
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
 
 # (9) Z-Blog (体积小，速度快的PHP博客程序)
-url_Zblog="https://update.zblogcn.com/zip/Z-BlogPHP_1_5_2_1930_Zero.zip"
+url_Zblog="https://update.zblogcn.com/zip/Z-BlogPHP_1_5_2_1935_Zero.zip"
 
 # (10) DzzOffice (开源办公平台)
 url_DzzOffice="https://codeload.github.com/zyx0814/dzzoffice/zip/master"
@@ -419,10 +419,10 @@ mkdir -p /opt/usr/php/tmp/
 chmod -R 777 /opt/usr/php/tmp/
 
 sed -e "/^doc_root/d" -i /opt/etc/php.ini
-sed -e "s/.*memory_limit = .*/memory_limit = 32M/g" -i /opt/etc/php.ini
+sed -e "s/.*memory_limit = .*/memory_limit = 128M/g" -i /opt/etc/php.ini
 sed -e "s/.*output_buffering = .*/output_buffering = 4096/g" -i /opt/etc/php.ini
-sed -e "s/.*post_max_size = .*/post_max_size = 1000M/g" -i /opt/etc/php.ini
-sed -e "s/.*max_execution_time = .*/max_execution_time = 200 /g" -i /opt/etc/php.ini
+sed -e "s/.*post_max_size = .*/post_max_size = 8000M/g" -i /opt/etc/php.ini
+sed -e "s/.*max_execution_time = .*/max_execution_time = 2000 /g" -i /opt/etc/php.ini
 sed -e "s/.*upload_max_filesize.*/upload_max_filesize = 8000M/g" -i /opt/etc/php.ini
 sed -e "s/.*listen.mode.*/listen.mode = 0666/g" -i /opt/etc/php7-fpm.d/www.conf
 
@@ -1133,9 +1133,20 @@ start()
 {
 # 输出选项
 cat << EOF
-----------------------------------------
-|**************** ONMP ****************|
-----------------------------------------
+      ___           ___           ___           ___    
+     /  /\         /__/\         /__/\         /  /\   
+    /  /::\        \  \:\       |  |::\       /  /::\  
+   /  /:/\:\        \  \:\      |  |:|:\     /  /:/\:\ 
+  /  /:/  \:\   _____\__\:\   __|__|:|\:\   /  /:/~/:/ 
+ /__/:/ \__\:\ /__/::::::::\ /__/::::| \:\ /__/:/ /:/  
+ \  \:\ /  /:/ \  \:\~~\~~\/ \  \:\~~\__\/ \  \:\/:/   
+  \  \:\  /:/   \  \:\  ~~~   \  \:\        \  \::/    
+   \  \:\/:/     \  \:\        \  \:\        \  \:\    
+    \  \::/       \  \:\        \  \:\        \  \:\   
+     \__\/         \__\/         \__\/         \__\/   
+
+=======================================================
+
 (1) 安装ONMP
 (2) 卸载ONMP
 (3) 设置数据库密码
