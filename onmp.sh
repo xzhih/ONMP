@@ -2,13 +2,12 @@
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-06-04 17:26:52
+# @Last Modified time: 2018-06-07 08:33:18
 
 # 软件包列表
-pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server-extra mariadb-client-extra"
+pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
 
 phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
-
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
@@ -159,7 +158,7 @@ init_onmp()
 init_nginx()
 {
     get_env
-    /opt/etc/init.d/S80* stop > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
     rm -rf /opt/etc/nginx/vhost 
     rm -rf /opt/etc/nginx/conf
     mkdir -p /opt/etc/nginx/vhost
@@ -342,7 +341,7 @@ OOO
 init_sql()
 {
     get_env
-    /opt/etc/init.d/S70* stop > /dev/null 2>&1
+    /opt/etc/init.d/S70mysqld stop > /dev/null 2>&1
     sleep 10
     rm -rf /opt/mysql
     rm -rf /opt/var/mysql
@@ -400,7 +399,7 @@ echo -e "\n正在初始化数据库，请稍等1分钟"
 sleep 20
 
 # 初次启动MySQL
-/opt/etc/init.d/S70* start
+/opt/etc/init.d/S70mysqld start
 sleep 60
 
 # 设置数据库密码
@@ -413,7 +412,7 @@ onmp restart
 init_php()
 {
 # PHP7设置 
-/opt/etc/init.d/S79* stop > /dev/null 2>&1
+/opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
 
 mkdir -p /opt/usr/php/tmp/
 chmod -R 777 /opt/usr/php/tmp/
@@ -451,7 +450,7 @@ PHPFPM
 ############# 用户设置数据库密码 ############
 set_passwd()
 {
-    /opt/etc/init.d/S70* start
+    /opt/etc/init.d/S70mysqld start
     sleep 3
     echo -e "\033[41;37m 初始密码：123456 \033[0m"
     mysqladmin -u root -p password
@@ -461,7 +460,10 @@ set_passwd()
 ################ 卸载onmp ###############
 remove_onmp()
 {
-    killall -9 nginx mysqld php-fpm
+    /opt/etc/init.d/S70mysqld stop > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
+    killall -9 nginx mysqld php-fpm > /dev/null 2>&1
     for pkg in $pkglist; do
         opkg remove $pkg --force-depends
     done
@@ -510,31 +512,25 @@ vhost_list()
 
 onmp_restart()
 {
+    /opt/etc/init.d/S70mysqld stop > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
     killall -9 nginx mysqld php-fpm > /dev/null 2>&1
     sleep 3
-    /opt/etc/init.d/S70* start > /dev/null 2>&1
-    /opt/etc/init.d/S79* start > /dev/null 2>&1
-    /opt/etc/init.d/S80* start > /dev/null 2>&1
+    /opt/etc/init.d/S70mysqld start > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm start > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx start > /dev/null 2>&1
     sleep 3
     num=0
-    if [ ! -f "/opt/var/run/nginx.pid" ] ;then
-        echo "Nginx 启动失败"
-        num=`expr $num + 1`
-    else
-        echo "Nginx 启动成功"
-    fi
-    if [ ! -f "/opt/var/run/php7-fpm.pid" ] ;then
-        echo "PHP-FPM 启动失败"
-        num=`expr $num + 1`
-    else
-        echo "PHP-FPM 启动成功"
-    fi
-    if [ ! -f "/opt/var/run/mysqld.pid" ] ;then
-        echo "MySQL 启动失败"
-        num=`expr $num + 1`
-    else
-        echo "MySQL 启动成功"
-    fi
+    for PROC in 'nginx' 'php-fpm' 'mysqld'; do 
+        if [ -n "`pidof $PROC`" ]; then
+            echo $PROC "启动成功";
+        else
+            echo $PROC "启动失败";
+            num=`expr $num + 1`
+        fi 
+    done
+
     if [[ $num -gt 0 ]]; then
         echo "onmp启动失败"
         logger -t "【ONMP】" "启动失败"
@@ -559,9 +555,9 @@ case $1 in
     stop )
     echo "onmp正在停止"
     logger -t "【ONMP】" "正在停止"
-    /opt/etc/init.d/S70* stop > /dev/null 2>&1
-    /opt/etc/init.d/S79* stop > /dev/null 2>&1
-    /opt/etc/init.d/S80* stop > /dev/null 2>&1
+    /opt/etc/init.d/S70mysqld stop > /dev/null 2>&1
+    /opt/etc/init.d/S79php7-fpm stop > /dev/null 2>&1
+    /opt/etc/init.d/S80nginx stop > /dev/null 2>&1
     echo "onmp已停止"
     logger -t "【ONMP】" "已停止"
     ;;
