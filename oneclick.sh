@@ -3,7 +3,7 @@
 # @Author: xzhih
 # @Date:   2018-03-19 04:44:09
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-06-04 16:35:55
+# @Last Modified time: 2018-06-09 05:09:23
 
 cat << EOF
       ___           ___           ___           ___    
@@ -43,7 +43,7 @@ Install()
     chmod +x /opt/onmp/onmp.sh
 
     # 获取php探针文件
-    curl -kfsSL https://raw.githubusercontent.com/xzhih/ONMP/master/tz.php > /opt/onmp/tz.php
+    curl -kfsSL https://raw.githubusercontent.com/WuSiYu/PHP-Probe/master/tz.php > /opt/onmp/tz.php
 
     /opt/onmp/onmp.sh
 }
