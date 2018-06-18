@@ -2,7 +2,7 @@
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-06-07 08:33:18
+# @Last Modified time: 2018-06-18 17:00:18
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
@@ -23,7 +23,7 @@ url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.8.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.2.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.4.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
