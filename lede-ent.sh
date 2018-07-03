@@ -104,5 +104,5 @@ echo ". /opt/etc/profile" >> /etc/profile
 source /etc/profile
 
 if [[ "$(which opkg)" == "/opt/bin/opkg" ]]; then
-    echo -e "\n安装成功\n"
+    echo -e "\n安装成功，重启查看是否生效\n"
 fi

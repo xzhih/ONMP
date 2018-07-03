@@ -2,12 +2,12 @@
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-06-18 17:00:18
+# @Last Modified time: 2018-07-03 14:35:40
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
 
-phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-mcrypt php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
+phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
 
 # 后续可能增加的包(缺少源支持)
 # php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
@@ -148,6 +148,7 @@ init_onmp()
     cp /opt/onmp/tz.php /opt/wwwroot/default -R
     add_vhost 81 default
     sed -e "s/.*\#php-fpm.*/    include     \/opt\/etc\/nginx\/conf\/php-fpm.conf\;/g" -i /opt/etc/nginx/vhost/default.conf
+    chmod -R 777 /opt/wwwroot/default
 
     # 生成ONMP命令
     set_onmp_sh
@@ -1052,8 +1053,9 @@ on_swap()
             dd if=/dev/zero of=/opt/.swap bs=1024 count=524288
             # 设置交换文件
             mkswap /opt/.swap
-            # 启用交换分区
+            chmod 0600 /opt/.swap
         fi
+        # 启用交换分区
         swapon /opt/.swap
         echo "现在你可以使用free命令查看swap是否启用"
     fi
