@@ -108,6 +108,22 @@ chmod +x ./onmp.sh
 查看网站列表：onmp list 
 ```
 
+**主要软件包的管理命令：**
+
+```
+Nginx 管理命令
+onmp nginx start|restart|stop
+
+MySQL 管理命令
+onmp mysql start|restart|stop
+
+PHP 管理命令
+onmp php start|restart|stop
+
+Redis 管理命令
+onmp redis start|restart|stop
+```
+
 **设置数据库密码：**
 
 输入 `onmp open` 后选择3，会提示 `Enter password:` ，这个时候要输入当前数据库的密码，比如我初始设置的数据库密码是123456，回车后要是密码正确，会提示输入你要设置的新密码，回车后会提示再次输入确认。也就是，一次旧密码，两次新密码。
