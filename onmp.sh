@@ -2,7 +2,7 @@
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-08-08 05:03:31
+# @Last Modified time: 2018-10-08 02:45:10
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
@@ -14,16 +14,16 @@ phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exi
 
 # Web程序
 # (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.2/phpMyAdmin-4.8.2-all-languages.zip"
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.3/phpMyAdmin-4.8.3-all-languages.zip"
 
 # (2) WordPress（使用最广泛的CMS）
 url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 
 # (3) Owncloud（经典的私有云）
-url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.9.zip"
+url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.10.zip"
 
 # (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
-url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.5.zip"
+url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.6.zip"
 
 # (5) h5ai（优秀的文件目录）
 url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
@@ -32,7 +32,7 @@ url_h5ai="https://release.larsjung.de/h5ai/h5ai-0.29.0.zip"
 url_Lychee="https://github.com/electerious/Lychee/archive/master.zip"
 
 # (7) Kodexplorer（可道云aka芒果云在线文档管理器）
-url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.25.zip"
+url_Kodexplorer="http://static.kodcloud.com/update/download/kodexplorer4.36.zip"
 
 # (8) Typecho (流畅的轻量级开源博客程序)
 url_Typecho="http://typecho.org/downloads/1.1-17.10.30-release.tar.gz"
@@ -453,7 +453,7 @@ tmpdir             = /opt/tmp/
 
 skip-external-locking
 
-bind-address       = 127.0.0.0
+bind-address       = 127.0.0.1
 
 key_buffer_size    = 24M
 max_allowed_packet = 24M
@@ -524,6 +524,9 @@ opcache.memory_consumption=128
 opcache.save_comments=1
 opcache.revalidate_freq=60
 opcache.fast_shutdown=1
+
+mysqli.default_socket=/opt/var/run/mysqld.sock
+pdo_mysql.default_socket=/opt/var/run/mysqld.sock
 PHPINI
 
 cat >> "/opt/etc/php7-fpm.d/www.conf" <<-\PHPFPM

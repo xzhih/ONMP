@@ -3,7 +3,7 @@
 # @Author: xzhih
 # @Date:   2018-03-19 04:44:09
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-08-08 05:05:33
+# @Last Modified time: 2018-10-08 01:51:35
 # sh -c "$(curl -kfsSL http://192.168.4.126:4000/oneclick.sh)"
 
 cat << EOF
@@ -28,8 +28,6 @@ LEDE（openwrt）、梅林上测试成功。
 项目地址：https://github.com/xzhih/ONMP
 
 更多使用教程：https://zhih.me
-
-QQ交流群：346477750
 
 EOF
 
