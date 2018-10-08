@@ -2,7 +2,7 @@
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
 # @Last Modified by:   xzhih
-# @Last Modified time: 2018-10-08 02:45:10
+# @Last Modified time: 2018-10-08 13:49:26
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
@@ -900,6 +900,8 @@ install_phpmyadmin()
     echo "正在配置$name..."
     cp /opt/wwwroot/$webdir/config.sample.inc.php /opt/wwwroot/$webdir/config.inc.php
     chmod 644 /opt/wwwroot/$webdir/config.inc.php
+    mkdir -p /opt/wwwroot/$webdir/tmp
+    chmod 777 /opt/wwwroot/$webdir/tmp
     sed -e "s/.*blowfish_secret.*/\$cfg['blowfish_secret'] = 'onmponmponmponmponmponmponmponmp';/g" -i /opt/wwwroot/$webdir/config.inc.php
 
     # 添加到虚拟主机
