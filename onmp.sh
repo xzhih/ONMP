@@ -1,8 +1,8 @@
 #!/bin/sh
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   xzhih
-# @Last Modified time: 2018-10-08 13:49:26
+# @Last Modified by:   Fangshing87
+# @Last Modified time: 2019-06-09 11:39:26
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
@@ -446,8 +446,9 @@ user               = theOne
 socket             = /opt/var/run/mysqld.sock
 pid-file           = /opt/var/run/mysqld.pid
 basedir            = /opt
-lc_messages_dir    = /opt/share/mysql
+lc_messages_dir    = /opt/share/mariadb
 lc_messages        = en_US
+innodb_use_native_aio = 0
 datadir            = /opt/var/mysql/
 tmpdir             = /opt/tmp/
 
